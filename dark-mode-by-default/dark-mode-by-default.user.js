@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Dark Mode by default
-// @description	Automatically enables the built-in Dark Mode on select sites.
+// @description	Automatically enables the built-in Dark Mode on various sites.
 // @version		2022.10
 // @author       SkauOfArcadia
 // @homepage https://skau.neocities.org/
@@ -74,20 +74,21 @@
 // @run-at      document-start
 // @grant       none
 // @inject-into content
+// @license     AGPL-3.0-or-later
 // ==/UserScript==
 /**
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 (function() {
     "use strict";
@@ -326,13 +327,13 @@
                 const ren = document.getElementById('darkModeBtn');
                 if (!!ren && !document.getElementsByTagName('html')[0].classList.contains('dark-mode'))
                 {
-                    setTimeout(() => { ren.click(); }, 100);
+                    setTimeout(() => { ren.click(); }, 10);
                 }
                 break;
             case "soyjak.wiki":
                 if (!document.getElementsByTagName('html')[0].classList.contains('client-darkmode'))
                 {
-                    setTimeout(() => { document.getElementById('pt-darkmode').getElementsByTagName('a')[0].click(); }, 10);
+                    setTimeout(() => { document.getElementById('pt-darkmode').getElementsByTagName('a')[0].click(); }, 100);
                 }
                 break;
             case "steamid.uk":
