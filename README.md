@@ -6,6 +6,12 @@ My scripts are mostly tested on Violentmonkey on Firefox but I do try to maintai
 
 If you don't already have an userscript manager installed in your browser, I recommend getting [ViolentMonkey](https://violentmonkey.github.io/).
 
+## Dark Mode by default
+
+Automatically enables the built-in Dark Mode on various sites.
+
+### Installation: [Click here](https://codeberg.org/mthsk/userscripts/raw/branch/master/dark-mode-by-default/dark-mode-by-default.user.js), or get it on [SleazyFork](https://sleazyfork.org/scripts/429388-dark-mode-by-default).
+
 ## Invidious Embed
 
 Replaces all YouTube embeds with Invidious ([yewtu.be](https://yewtu.be/)) embeds wherever you go.
