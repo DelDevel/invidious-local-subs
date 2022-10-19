@@ -35,3 +35,12 @@ Replaces all imgur image embeds with Rimgo ([i.bcow.xyz](https://i.bcow.xyz/)) e
 Redirects you from big tech websites to their free-as-in-freedom implementations.
 
 ### Installation: [Click Here](https://codeberg.org/mthsk/userscripts/raw/branch/master/simple-libre-redirects/simple-libre-redirects.user.js)
+
+## Simple Sponsor Skipper
+
+A simple, private and secure userscript implementation of SponsorBlock. Compatible with YouTube and Invidious.  
+Skips annoying intros, sponsors and w/e using the SponsorBlock API.
+
+Once installed, it can be configured [here](https://www.youtube.com/#s3config).
+
+### Installation: [Click here](https://codeberg.org/mthsk/userscripts/raw/branch/master/simple-sponsor-skipper/simple-sponsor-skipper.user.js), or get it on [GreasyFork](https://greasyfork.org/scripts/453320-simple-sponsor-skipper).
