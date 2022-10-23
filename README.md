@@ -38,7 +38,7 @@ Redirects you from big tech websites to their free-as-in-freedom implementations
 
 ## Simple Sponsor Skipper
 
-A simple, private and secure userscript implementation of SponsorBlock. Compatible with YouTube and Invidious.  
+A simple, private and secure userscript implementation of SponsorBlock. Compatible with YouTube, Invidious and CloudTube.  
 Skips annoying intros, sponsors and w/e using the SponsorBlock API.
 
 Once installed, it can be configured [here](https://www.youtube.com/#s3config).
