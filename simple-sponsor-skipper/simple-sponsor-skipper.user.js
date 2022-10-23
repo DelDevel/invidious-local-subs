@@ -38,9 +38,9 @@
 // @connect     sponsor.ajay.app
 // @require     https://greasemonkey.github.io/gm4-polyfill/gm4-polyfill.js
 // @run-at      document-start
-// @version     2022.08
+// @version     2022.10
 // @license     AGPL-3.0-or-later
-// @description Skips annoying intros, sponsors and w/e on YouTube and its frontends like Invidious and Piped using the SponsorBlock API.
+// @description Skips annoying intros, sponsors and w/e on YouTube and its frontends like Invidious and CloudTube using the SponsorBlock API.
 // ==/UserScript==
 /**
  * This program is free software: you can redistribute it and/or modify
@@ -61,40 +61,52 @@
     async function go(videoId) {
         console.log("New video ID: " + videoId);
 
-        let vidsha256 = await sha256(videoId);
-        console.log("SHA256 hash: " + vidsha256);
+        let segurl = "";
         let result = [];
         let rBefore = -1;
-        let cat = "?category=poi_highlight";
+        let cat = ["poi_highlight"];
         if (s3settings.categories & categories.sponsor) {
-            cat += "&category=sponsor";
+            cat.push("sponsor");
         }
         if (s3settings.categories & categories.intro) {
-            cat += "&category=intro";
+            cat.push("intro");
         }
         if (s3settings.categories & categories.outro) {
-            cat += "&category=outro";
+            cat.push("outro");
         }
         if (s3settings.categories & categories.interaction) {
-            cat += "&category=interaction";
+            cat.push("interaction");
         }
         if (s3settings.categories & categories.selfpromo) {
-            cat += "&category=selfpromo";
+            cat.push("selfpromo");
         }
         if (s3settings.categories & categories.preview) {
-            cat += "&category=preview";
+            cat.push("preview");
         }
         if (s3settings.categories & categories.music_offtopic) {
-            cat += "&category=music_offtopic";
+            cat.push("music_offtopic");
         }
         if (s3settings.categories & categories.filler) {
-            cat += "&category=filler";
+            cat.push("filler");
         }
+
+        if (s3settings.disable_hashing)
+        {
+            segurl = 'https://sponsor.ajay.app/api/skipSegments?videoID=' + videoId + "&categories=" + encodeURIComponent(JSON.stringify(shuffle(cat)));
+        }
+        else
+        {
+            let vidsha256 = await sha256(videoId);
+            console.log("SHA256 hash: " + vidsha256);
+            segurl = 'https://sponsor.ajay.app/api/skipSegments/' + vidsha256.substring(0,4) + "?categories=" + encodeURIComponent(JSON.stringify(shuffle(cat)));
+        }
+        console.log(segurl);
+
         const resp = await (function() {
             return new Promise(resolve => {
                 GM.xmlHttpRequest({
                     method: 'GET',
-                    url: 'https://sponsor.ajay.app/api/skipSegments/' + vidsha256.substring(0,4) + cat,
+                    url: segurl,
                     headers: {
                         'Accept': 'application/json'
                     },
@@ -103,7 +115,12 @@
             });
         })();
         try {
-            const response = JSON.parse(resp.responseText);
+            let response;
+            if (s3settings.disable_hashing)
+                response = JSON.parse("[{\"videoID\":\"" + videoId + "\",\"segments\":" + resp.responseText + "}]");
+            else
+                response = JSON.parse(resp.responseText);
+
             for (let x = 0; x < response.length; x++)
             {
                 if (response[x].videoID === videoId)
@@ -257,6 +274,24 @@
         return hashHex;
     }
 
+    function shuffle(array) {
+      let currentIndex = array.length,  randomIndex;
+
+      // While there remain elements to shuffle.
+      while (currentIndex != 0) {
+
+        // Pick a remaining element.
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+
+        // And swap it with the current element.
+        [array[currentIndex], array[randomIndex]] = [
+          array[randomIndex], array[currentIndex]];
+      }
+
+      return array;
+    }
+
     const categories = {
         sponsor: 1,
         intro: 2,
@@ -274,7 +309,13 @@
     if(!!s3settings && Object.keys(s3settings).length > 0){
         console.log((new Date()).toTimeString().split(' ')[0] + ' - Simple Sponsor Skipper: Settings loaded!');
     } else {
-        s3settings = JSON.parse('{ "categories":127, "upvotes":-2, "notifications":true }');
+        s3settings = JSON.parse('{ "categories":127, "upvotes":-2, "notifications":true, "disable_hashing":false }');
+        if(navigator.userAgent.toLowerCase().indexOf('pale moon') !== -1
+           || navigator.userAgent.toLowerCase().indexOf('mypal') !== -1
+           || navigator.userAgent.toLowerCase().indexOf('male poon') !== -1)
+        {
+            s3settings.disable_hashing = true;
+        }
         await GM.setValue('s3settings', s3settings);
         console.log((new Date()).toTimeString().split(' ')[0] + ' - Simple Sponsor Skipper: Default settings saved!');
         GM.notification({
@@ -288,7 +329,7 @@
     if (location.hash.toLowerCase() === '#s3config') {
         window.addEventListener("DOMContentLoaded", function() {
             const docHtml = document.getElementsByTagName('html')[0];
-            docHtml.innerHTML = '\<center><h1>Simple Sponsor Skipper</h1><br><form><div><input type="checkbox" id="sponsor"><label for="sponsor">Skip sponsor segments</label><br><input type="checkbox" id="intro"><label for="intro">Skip intro segments</label><br><input type="checkbox" id="outro"><label for="outro">Skip outro segments</label><br><input type="checkbox" id="interaction"><label for="interaction">Skip interaction reminder segments</label><br><input type="checkbox" id="selfpromo"><label for="selfpromo">Skip self-promotion segments</label><br><input type="checkbox" id="preview"><label for="preview">Skip preview segments</label><br><input type="checkbox" id="music_offtopic"><label for="music_offtopic">Skip non-music segments in music videos</label><br><input type="checkbox" id="filler"><label for="filler">Skip filler segments (WARNING: very aggressive!)</label><br><label for="upvotes">Minimum segment upvotes:</label><input type="number" id="upvotes"><br><input type="checkbox" id="notifications"><label for="notifications">Enable Desktop Notifications</label></div><br><div><button type="button" id="btnsave">Save settings</button><button type="button" id="btnclose">Close</button></div></form></center>';
+            docHtml.innerHTML = '\<center><h1>Simple Sponsor Skipper</h1><br><form><div><input type="checkbox" id="sponsor"><label for="sponsor">Skip sponsor segments</label><br><input type="checkbox" id="intro"><label for="intro">Skip intro segments</label><br><input type="checkbox" id="outro"><label for="outro">Skip outro segments</label><br><input type="checkbox" id="interaction"><label for="interaction">Skip interaction reminder segments</label><br><input type="checkbox" id="selfpromo"><label for="selfpromo">Skip self-promotion segments</label><br><input type="checkbox" id="preview"><label for="preview">Skip preview segments</label><br><input type="checkbox" id="music_offtopic"><label for="music_offtopic">Skip non-music segments in music videos</label><br><input type="checkbox" id="filler"><label for="filler">Skip filler segments (WARNING: very aggressive!)</label><br><label for="upvotes">Minimum segment upvotes:</label><input type="number" id="upvotes"><br><input type="checkbox" id="notifications"><label for="notifications">Enable Desktop Notifications</label><br><input type="checkbox" id="disable_hashing"><label for="disable_hashing">Disable Video ID Hashing (Pale Moon Compatibility Fix)</label></div><br><div><button type="button" id="btnsave">Save settings</button><button type="button" id="btnclose">Close</button></div></form></center>';
             docHtml.style = "";
             document.title = 'Simple Sponsor Skipper Configuration';
             document.getElementById('sponsor').checked = (s3settings.categories & categories.sponsor);
@@ -301,12 +342,12 @@
             document.getElementById('filler').checked = (s3settings.categories & categories.filler);
             document.getElementById('upvotes').value = s3settings.upvotes;
             document.getElementById('notifications').checked = s3settings.notifications;
+            document.getElementById('disable_hashing').checked = s3settings.disable_hashing;
             const btnSave = document.getElementById('btnsave');
             btnSave.addEventListener("click", async function() {
                 s3settings.categories = 0;
                 if (document.getElementById('sponsor').checked) {
                     s3settings.categories += categories.sponsor;
-
                 }
                 if (document.getElementById('intro').checked) {
                     s3settings.categories += categories.intro;
@@ -340,6 +381,7 @@
                 }
                 s3settings.upvotes = parseInt(document.getElementById('upvotes').value, 10) || -2;
                 s3settings.notifications = document.getElementById('notifications').checked;
+                s3settings.disable_hashing = document.getElementById('disable_hashing').checked;
                 await GM.setValue('s3settings', s3settings);
                 console.log((new Date()).toTimeString().split(' ')[0] + ' - Simple Sponsor Skipper: Settings saved!');
                 btnSave.textContent = "Saved!";
