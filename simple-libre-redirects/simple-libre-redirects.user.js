@@ -2,7 +2,7 @@
 // @name        Simple Libre Redirects
 // @description	Redirects you from big tech websites to their Free-as-in-freedom implementations.
 // @author      SkauOfArcadia
-// @version     2022.09-2
+// @version     2022.10
 // @homepage    https://skau.neocities.org/
 // @contactURL  https://t.me/SkauOfArcadia
 // @updateURL       https://codeberg.org/mthsk/userscripts/raw/branch/master/simple-libre-redirects/simple-libre-redirects.user.js
@@ -11,17 +11,18 @@
 // @match       *://i.imgur.com/*
 // @match       *://imgur.io/*
 // @match       *://www.instagram.com/*
+// @match       *://*.medium.com/*
 // @match       *://*.reddit.com/*
 // @match       *://*.tiktok.com/*
 // @match       *://*.tumblr.com/*
 // @match       *://twitter.com/*
 // @match       *://mobile.twitter.com/*
+// @match       *://*.wikipedia.org/*
 // @match       *://www.youtube.com/*
 // @match       *://m.youtube.com/*
 // @match       *://youtu.be/*
 // @match       *://music.youtube.com/*
 // @exclude     *://www.instagram.com/explore/*
-// @exclude     *://*.youtube.com/clip/*
 // @exclude     *://*.youtube.com/embed/*
 // @run-at      document-start
 // @grant       none
@@ -50,7 +51,9 @@
     const invidInstance = "yewtu.be"; //defines the Invidious/Piped instance to be used.
     const bbInstance = "beatbump.ml"; //defines the Beatbump instance to be used.
     const numblrInstance = "numblr.net"; //defines the Numblr instance to be used.
-    const tokInstance = "proxitok.herokuapp.com"; //defines the proxiTok instance to be used.
+    const tokInstance = "proxitok.pabloferreiro.es"; //defines the proxiTok instance to be used.
+    const wikiInstance = "wikiless.org"; //defines the Wikiless instance to be used.
+    const scribeInstance = "scribe.rip"; //defines the Scribe instance to be used.
     const invidDash = false; //defines if the quality=dash parameter will be used for invidious
     const invidNoJS = false; //defines if the nojs=1 parameter will be used for invidious
     let params = new URLSearchParams(window.location.search);
@@ -60,20 +63,13 @@
         case "i.stack.imgur.com":
         case "imgur.io":
             let imgpath = window.location.pathname.replace('.gifv', '.mp4').replace('.jpg', '.jpeg');
-            console.log(imgpath);
+            if (window.location.hostname === "i.stack.imgur.com") { imgpath = "/stack" + imgpath }
             if (imgpath.toLowerCase().endsWith('.mp4')) {
                 params.set('download', 1);
             } else if (imgpath.toLowerCase().match(/\.(jpeg|jpg|gif|png|bmp)$/)) {
                 params.set('no_webp', 1);
             }
-            if (window.location.hostname === "i.stack.imgur.com")
-            {
-                window.location.replace("https://" + rimgoInstance + "/stack" + imgpath + '?' + params + window.location.hash);
-            }
-            else
-            {
-                window.location.replace("https://" + rimgoInstance + imgpath + '?' + params + window.location.hash);
-            }
+            window.location.replace("https://" + rimgoInstance + imgpath + '?' + params + window.location.hash);
             break;
         case "www.instagram.com":
             if (window.location.pathname === '/' || window.location.pathname.indexOf('/p/') === 0 || window.location.pathname.indexOf('/tv/') === 0) {
@@ -83,8 +79,10 @@
             }
             break;
         case "reddit.com":
+        case "amp.reddit.com":
         case "i.reddit.com":
         case "new.reddit.com":
+        case "np.reddit.com":
         case "old.reddit.com":
         case "www.reddit.com":
             if ((window.location.pathname.indexOf('over18') !== -1 || window.location.pathname.indexOf('login') !== -1) && params.has('dest')) {
@@ -92,6 +90,10 @@
             } else {
                 window.location.replace("https://" + tedditInstance + window.location.pathname + window.location.search + window.location.hash);
             }
+            break;
+        case "medium.com":
+        case "www.medium.com":
+            window.location.replace("https://" + scribeInstance + window.location.pathname + window.location.search + window.location.hash);
             break;
         case "tiktok.com":
         case "www.tiktok.com":
@@ -104,15 +106,29 @@
         case "youtu.be":
         case "m.youtube.com":
         case "www.youtube.com":
-            if (invidDash) {
+            if (invidDash)
                 params.set('quality', 'dash');
-            }
-            if (invidNoJS) {
+            if (invidNoJS)
                 params.set('nojs', 1);
+
+            if (window.location.pathname.indexOf('/clip/') === 0) {
+                window.addEventListener("load", function() {
+                    const bar = document.getElementsByClassName('ytp-progress-bar')[0];
+                    const check = window.setInterval(function(){
+                        if (!!bar && !!bar.getAttribute('aria-valuemin') && !!bar.getAttribute('aria-valuemax')
+                            && bar.getAttribute('aria-valuemin') !== bar.getAttribute('aria-valuemax')
+                            && !!document.body.querySelector('[video-id]').getAttribute('video-id'))
+                        {
+                            params.set('v', document.body.querySelector('[video-id]').getAttribute('video-id'));
+                            params.set('start', bar.getAttribute('aria-valuemin'));
+                            params.set('end', bar.getAttribute('aria-valuemax'));
+                            window.location.replace("https://" + invidInstance + "/watch?" + params + window.location.hash);
+                            clearInterval(check);
+                        }
+                    }, 100);
+                });
             }
-            if (window.location.pathname.indexOf('/redirect') === 0 && params.has('q')) {
-                window.location.replace(decodeURIComponent(params.get('q')))
-            } else if (window.location.pathname.indexOf('/shorts/') === 0) {
+            else if (window.location.pathname.indexOf('/shorts/') === 0) {
                 window.location.replace("https://" + invidInstance + window.location.pathname.replace('/shorts/', '/watch?v=') + '&' + params + window.location.hash);
             } else {
                 window.location.replace("https://" + invidInstance + window.location.pathname + '?' + params + window.location.hash);
@@ -128,6 +144,11 @@
                 window.location.replace("https://" + numblrInstance + window.location.pathname.replace("/login_required","").replace("/explore/trending","/"));
             } else if (window.location.hostname.endsWith('.tumblr.com')) {
                 window.location.replace("https://" + numblrInstance + "/" + window.location.hostname.replace(".tumblr.com","") + window.location.pathname);
+            }
+            else if (window.location.hostname === "wikipedia.org" || window.location.hostname.endsWith('.wikipedia.org')) {
+                if (window.location.hostname !== "wikipedia.org" && window.location.hostname !== "www.wikipedia.org")
+                    params.set('lang', window.location.hostname.replace(".wikipedia.org",""));
+                window.location.replace("https://" + wikiInstance + window.location.pathname + '?' + params);
             }
             break;
     }
