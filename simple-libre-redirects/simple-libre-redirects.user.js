@@ -2,8 +2,8 @@
 // @name        Simple Libre Redirects
 // @description	Redirects you from big tech websites to their Free-as-in-freedom implementations.
 // @author      SkauOfArcadia
-// @version     2022.10
-// @homepage    https://skau.neocities.org/
+// @version     2022.11
+// @homepage    https://codeberg.org/mthsk/userscripts/src/branch/master/simple-libre-redirects
 // @contactURL  https://t.me/SkauOfArcadia
 // @updateURL       https://codeberg.org/mthsk/userscripts/raw/branch/master/simple-libre-redirects/simple-libre-redirects.user.js
 // @downloadURL     https://codeberg.org/mthsk/userscripts/raw/branch/master/simple-libre-redirects/simple-libre-redirects.user.js
@@ -72,7 +72,7 @@
             window.location.replace("https://" + rimgoInstance + imgpath + '?' + params + window.location.hash);
             break;
         case "www.instagram.com":
-            if (window.location.pathname === '/' || window.location.pathname.indexOf('/p/') === 0 || window.location.pathname.indexOf('/tv/') === 0) {
+            if (window.location.pathname === '/' || window.location.pathname.indexOf('/p/') === 0 || window.location.pathname.indexOf('/tv/') === 0 || window.location.pathname.indexOf('/reel/') === 0) {
                 window.location.replace("https://" + gramInstance + window.location.pathname.replace('/tv/', '/p/') + window.location.search + window.location.hash);
             } else {
                 window.location.replace("https://" + gramInstance + "/u" + window.location.pathname + window.location.search + window.location.hash);
@@ -147,7 +147,7 @@
             }
             else if (window.location.hostname === "wikipedia.org" || window.location.hostname.endsWith('.wikipedia.org')) {
                 if (window.location.hostname !== "wikipedia.org" && window.location.hostname !== "www.wikipedia.org")
-                    params.set('lang', window.location.hostname.replace(".wikipedia.org",""));
+                    params.set('lang', window.location.hostname.split('.')[0]);
                 window.location.replace("https://" + wikiInstance + window.location.pathname + '?' + params);
             }
             break;
