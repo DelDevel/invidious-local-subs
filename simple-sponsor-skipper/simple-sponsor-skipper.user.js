@@ -42,7 +42,7 @@
 // @connect     mirror.sb.mchang.xyz
 // @require     https://greasemonkey.github.io/gm4-polyfill/gm4-polyfill.js
 // @run-at      document-start
-// @version     2022.10-1
+// @version     2022.11
 // @license     AGPL-3.0-or-later
 // @description Skips annoying intros, sponsors and w/e on YouTube and its frontends like Invidious and CloudTube using the SponsorBlock API.
 // ==/UserScript==
@@ -158,45 +158,89 @@
                     image: favicon,
                 })}, 600);
             }
-            const tfunc = function() {
-                if (location.pathname.indexOf(videoId) === -1 && location.search.indexOf('v=' + videoId) === -1) {
-                    window.clearInterval(timer);
-                    document.removeEventListener("visibilitychange", efunc);
-                    console.log('Disposing of timer for video ID ' + videoId);
-                } //Dispose of the timer once we no longer need it.
-                else if ((location.hostname.endsWith(".youtube.com") || location.hostname === 'www.youtube-nocookie.com' || location.hostname === 'youtu.be') && !!document.getElementById("movie_player")) //Youtube
-                {
-                    player = unsafeWindow.document.getElementById("movie_player");
-                    if (player.baseURI.indexOf(videoId) !== -1 && player.getPlayerState() === 1 && x < result.length && player.getCurrentTime() >= result[x].segment[0]) {
-                        if (player.getCurrentTime() < result[x].segment[1]) {
-                            player.seekTo(result[x].segment[1]);
-                            if (s3settings.notifications)
-                            {
-                                GM.notification({
-                                    title: "Skipped " + result[x].category.replace('music_offtopic','non-music').replace('selfpromo', 'self-promotion') + " segment.",
-                                    text: "Segment " + (x + 1) + " out of " + result.length + "\n\u00AD\n" + document.title + " (Video ID: " + videoId + ")",
-                                    silent: true,
-                                    timeout: 5000,
-                                    image: favicon,
-                                });
-                            }
-                            console.log("Skipping " + result[x].category + " segment (" + (x + 1) + " out of " + result.length + ") from " + result[x].segment[0] + " to " + result[x].segment[1]);
-                        }
-                        x++;
-                    } else if (player.getCurrentTime() < prevTime) {
-                        for (let s = 0; s < result.length; s++) {
-                            if (player.getCurrentTime() < result[s].segment[1]) {
-                                x = s;
-                                console.log("Next segment is " + s);
-                                break;
-                            }
-                        }
-                    }
-                    prevTime = player.getCurrentTime();
-                } else if (!!document.getElementById("player_html5_api") || !!document.getElementById("player") || !!document.getElementById("video")) //Invidious and CloudTube
-                {
-                    player = document.getElementById("player_html5_api") || document.getElementById("player") || document.getElementById("video");
+            if (location.hostname === 'youtube.com' || location.hostname.endsWith(".youtube.com") ||
+                location.hostname === 'youtube-nocookie.com' || location.hostname.endsWith(".youtube-nocookie.com") ||
+                location.hostname === 'youtu.be' || location.hostname.endsWith(".youtu.be")) // YouTube
+            {
+                let looped = false;
+                const tfunc = function() {
+                    if (location.pathname.indexOf(videoId) === -1 && location.search.indexOf('v=' + videoId) === -1) {
+                        window.clearInterval(timer);
+                        document.removeEventListener("visibilitychange", efunc);
+                        console.log('Disposing of timer for video ID ' + videoId);
+                    } //Dispose of the timer once we no longer need it.
+                    else
+                    {
+                        player = unsafeWindow.document.getElementById("movie_player");
+                        if (player.baseURI.indexOf(videoId) !== -1 && player.getPlayerState() === 1 && x < result.length && player.getCurrentTime() >= result[x].segment[0]) {
+                            if (player.getCurrentTime() < result[x].segment[1]) {
+                                if (player.getLoopVideo() === true &&
+                                   Math.round(result[x].segment[1]) === Math.round(player.getDuration()))
+                                {
+                                    player.seekTo(0);
+                                    looped = true;
+                                }
+                                else
+                                    player.seekTo(result[x].segment[1]);
 
+                                if (s3settings.notifications)
+                                {
+                                    GM.notification({
+                                        title: "Skipped " + result[x].category.replace('music_offtopic','non-music').replace('selfpromo', 'self-promotion') + " segment.",
+                                        text: "Segment " + (x + 1) + " out of " + result.length + "\n\u00AD\n" + document.title + " (Video ID: " + videoId + ")",
+                                        silent: true,
+                                        timeout: 5000,
+                                        image: favicon,
+                                    });
+                                }
+                                console.log("Skipping " + result[x].category + " segment (" + (x + 1) + " out of " + result.length + ") from " + result[x].segment[0] + " to " + result[x].segment[1]);
+                            }
+                            x++;
+                        } else if (player.getCurrentTime() < prevTime || looped) {
+                            looped = false;
+                            for (let s = 0; s < result.length; s++) {
+                                if (player.getCurrentTime() < result[s].segment[1]) {
+                                    x = s;
+                                    console.log("Next segment is " + s);
+                                    break;
+                                }
+                            }
+                        }
+                        prevTime = player.getCurrentTime();
+                    }
+                };
+                var timer = window.setInterval(tfunc, 333);
+                const efunc = function() { //prevents the interval from being killed after switching tabs
+                    window.clearInterval(timer);
+                    timer = window.setInterval(tfunc, 333);
+                };
+                document.addEventListener("visibilitychange", efunc);
+            }
+            else // Invidious/CloudTube
+            {
+                player = await (function() {
+                    return new Promise(resolve => {
+                        let plr = document.getElementById("player_html5_api") || document.getElementById("player") || document.getElementById("video");
+                        if (!!plr.video) {
+                            resolve(plr.video);
+                        }
+                        else if (!!plr) {
+                            resolve(plr);
+                        }
+                        else {
+                            document.addEventListener('load', function(event){
+                                plr = document.getElementById("player_html5_api") || document.getElementById("player") || document.getElementById("video");
+                                if (!!plr.video) {
+                                    resolve(plr.video);
+                                }
+                                else {
+                                    resolve(plr);
+                                }
+                            });
+                        }
+                    });
+                })();
+                player.addEventListener('timeupdate', () => {
                     if (!player.paused && x < result.length && player.currentTime >= result[x].segment[0]) {
                         if (player.currentTime < result[x].segment[1]) {
                             player.currentTime = result[x].segment[1];
@@ -222,14 +266,8 @@
                         }
                     }
                     prevTime = player.currentTime;
-                }
-            };
-            var timer = window.setInterval(tfunc, 333);
-            const efunc = function() { //prevents the interval from being killed after switching tabs
-                window.clearInterval(timer);
-                timer = window.setInterval(tfunc, 333);
-            };
-            document.addEventListener("visibilitychange", efunc);
+                });
+            }
         }
     }
 
@@ -326,7 +364,7 @@
     if (location.hash.toLowerCase() === '#s3config') {
         window.addEventListener("DOMContentLoaded", function() {
             const docHtml = document.getElementsByTagName('html')[0];
-            docHtml.innerHTML = '\<center><h1>Simple Sponsor Skipper</h1><br><form><div><input type="checkbox" id="sponsor"><label for="sponsor">Skip sponsor segments</label><br><input type="checkbox" id="intro"><label for="intro">Skip intro segments</label><br><input type="checkbox" id="outro"><label for="outro">Skip outro segments</label><br><input type="checkbox" id="interaction"><label for="interaction">Skip interaction reminder segments</label><br><input type="checkbox" id="selfpromo"><label for="selfpromo">Skip self-promotion segments</label><br><input type="checkbox" id="preview"><label for="preview">Skip preview segments</label><br><input type="checkbox" id="music_offtopic"><label for="music_offtopic">Skip non-music segments in music videos</label><br><input type="checkbox" id="filler"><label for="filler">Skip filler segments (WARNING: very aggressive!)</label><br><label for="upvotes">Minimum segment upvotes:</label><input type="number" id="upvotes"><br><input type="checkbox" id="notifications"><label for="notifications">Enable Desktop Notifications</label><br><input type="checkbox" id="disable_hashing"><label for="disable_hashing">Disable Video ID Hashing (Pale Moon Compatibility Fix)</label><br><label for="instance">Database Instance:</label><input id="instance" type="text" list="instances" /><datalist id="instances"><option value="sponsor.ajay.app">sponsor.ajay.app (Official)</option><option value="sponsorblock.kavin.rocks">sponsorblock.kavin.rocks</option><option value="mirror.sb.mchang.xyz">mirror.sb.mchang.xyz</option></datalist><br><label for="darkmode">Theme:</label><select id="darkmode"><option value="-1">auto</option><option value="0">light</option> <option value="1">dark</option></select></div><br><div><button type="button" id="btnsave" style="margin-right: 1em;">Save settings</button><button type="button" id="btnclose" style="margin-left: 1em;">Close</button></div></form></center>';
+            docHtml.innerHTML = '\<center><h1>Simple Sponsor Skipper</h1><br><form><div><input type="checkbox" id="sponsor"><label for="sponsor">Skip sponsor segments</label><br><input type="checkbox" id="intro"><label for="intro">Skip intro segments</label><br><input type="checkbox" id="outro"><label for="outro">Skip outro segments</label><br><input type="checkbox" id="interaction"><label for="interaction">Skip interaction reminder segments</label><br><input type="checkbox" id="selfpromo"><label for="selfpromo">Skip self-promotion segments</label><br><input type="checkbox" id="preview"><label for="preview">Skip preview segments</label><br><input type="checkbox" id="music_offtopic"><label for="music_offtopic">Skip non-music segments in music videos</label><br><input type="checkbox" id="filler"><label for="filler">Skip filler segments (WARNING: very aggressive!)</label><br><label for="upvotes">Minimum segment upvotes:</label><input type="number" id="upvotes"><br><input type="checkbox" id="notifications"><label for="notifications">Enable Desktop Notifications</label><br><input type="checkbox" id="disable_hashing"><label for="disable_hashing">Disable Video ID Hashing (Pale Moon Compatibility Fix)</label><br><label for="instance">Database Instance:</label><input id="instance" type="text" list="instances" /><datalist id="instances"><option value="sponsor.ajay.app">sponsor.ajay.app (Official)</option><option value="sponsorblock.kavin.rocks">sponsorblock.kavin.rocks</option><option value="sponsorblock.gleesh.net">sponsorblock.gleesh.net</option><option value="sb.theairplan.com">sb.theairplan.com</option></datalist><br><label for="darkmode">Theme:</label><select id="darkmode"><option value="-1">auto</option><option value="0">light</option> <option value="1">dark</option></select></div><br><div><button type="button" id="btnsave" style="margin-right: 1em;">Save settings</button><button type="button" id="btnclose" style="margin-left: 1em;">Close</button></div></form></center>';
             docHtml.style = "";
             document.head.innerHTML = "\<style> body { background-color: white; color: black; } .dark-theme { background-color: black; color: white; } </style>";
             document.title = 'Simple Sponsor Skipper Configuration';
