@@ -42,7 +42,7 @@
 // @connect     mirror.sb.mchang.xyz
 // @require     https://greasemonkey.github.io/gm4-polyfill/gm4-polyfill.js
 // @run-at      document-start
-// @version     2022.11
+// @version     2022.11.1
 // @license     AGPL-3.0-or-later
 // @description Skips annoying intros, sponsors and w/e on YouTube and its frontends like Invidious and CloudTube using the SponsorBlock API.
 // ==/UserScript==
@@ -162,7 +162,6 @@
                 location.hostname === 'youtube-nocookie.com' || location.hostname.endsWith(".youtube-nocookie.com") ||
                 location.hostname === 'youtu.be' || location.hostname.endsWith(".youtu.be")) // YouTube
             {
-                let looped = false;
                 const tfunc = function() {
                     if (location.pathname.indexOf(videoId) === -1 && location.search.indexOf('v=' + videoId) === -1) {
                         window.clearInterval(timer);
@@ -171,17 +170,15 @@
                     } //Dispose of the timer once we no longer need it.
                     else
                     {
-                        player = unsafeWindow.document.getElementById("movie_player");
+                        if (!player)
+                            player = unsafeWindow.document.getElementById("movie_player");
+
                         if (player.baseURI.indexOf(videoId) !== -1 && player.getPlayerState() === 1 && x < result.length && player.getCurrentTime() >= result[x].segment[0]) {
                             if (player.getCurrentTime() < result[x].segment[1]) {
-                                if (player.getLoopVideo() === true &&
-                                   Math.round(result[x].segment[1]) === Math.round(player.getDuration()))
-                                {
-                                    player.seekTo(0);
-                                    looped = true;
-                                }
-                                else
-                                    player.seekTo(result[x].segment[1]);
+                                player.seekTo(result[x].segment[1]);
+
+                                if (player.getLoopVideo() && player.getPlayerState() === 0)
+                                    setTimeout(() => { player.playVideo(); }, 10);
 
                                 if (s3settings.notifications)
                                 {
@@ -196,8 +193,7 @@
                                 console.log("Skipping " + result[x].category + " segment (" + (x + 1) + " out of " + result.length + ") from " + result[x].segment[0] + " to " + result[x].segment[1]);
                             }
                             x++;
-                        } else if (player.getCurrentTime() < prevTime || looped) {
-                            looped = false;
+                        } else if (player.getCurrentTime() < prevTime) {
                             for (let s = 0; s < result.length; s++) {
                                 if (player.getCurrentTime() < result[s].segment[1]) {
                                     x = s;
@@ -209,10 +205,10 @@
                         prevTime = player.getCurrentTime();
                     }
                 };
-                var timer = window.setInterval(tfunc, 333);
+                var timer = window.setInterval(tfunc, 100);
                 const efunc = function() { //prevents the interval from being killed after switching tabs
                     window.clearInterval(timer);
-                    timer = window.setInterval(tfunc, 333);
+                    timer = window.setInterval(tfunc, 100);
                 };
                 document.addEventListener("visibilitychange", efunc);
             }
@@ -276,11 +272,11 @@
             let newSegments = [];
             let newKey = 0;
             for (let x = 0; x < segments.length; x++) {
-                if (x > 0 && Math.ceil(newSegments[newKey - 1].segment[1]) >= Math.floor(segments[x].segment[0]) && newSegments[newKey - 1].segment[1] < segments[x].segment[1] && segments[x].votes >= s3settings.upvotes) {
+                if (x > 0 && newSegments[newKey - 1].segment[1] >= segments[x].segment[0] && newSegments[newKey - 1].segment[1] < segments[x].segment[1] && segments[x].votes >= s3settings.upvotes) {
                     newSegments[newKey - 1].segment[1] = segments[x].segment[1];
                     newSegments[newKey - 1].category = "combined";
                     console.log(x + " combined with " + (newKey - 1));
-                } else if (segments[x].votes < s3settings.upvotes || (x > 0 && Math.ceil(newSegments[newKey - 1].segment[1]) >= Math.floor(segments[x].segment[0]) && newSegments[newKey - 1].segment[1] >= segments[x].segment[1])) {
+                } else if (segments[x].votes < s3settings.upvotes || (x > 0 && newSegments[newKey - 1].segment[1] >= segments[x].segment[0] && newSegments[newKey - 1].segment[1] >= segments[x].segment[1])) {
                     console.log("Ignoring segment " + x);
                 } else {
                     newSegments[newKey] = segments[x];
