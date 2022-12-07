@@ -8,29 +8,32 @@
 // @match       *://youtu.be/*
 // @match       *://www.youtube.com/*
 // @match       *://www.youtube-nocookie.com/embed/*
-// @match       *://inv.riverside.rocks/*
-// @match       *://invidio.xamh.de/*
-// @match       *://invidious.esmailelbob.xyz/*
-// @match       *://invidious.flokinet.to/*
-// @match       *://invidious-jp.kavin.rocks/*
-// @match       *://invidious-us.kavin.rocks/*
-// @match       *://invidious.kavin.rocks/*
-// @match       *://invidious.lunar.icu/*
-// @match       *://inv.bp.mutahar.rocks/*
-// @match       *://invidious.mutahar.rocks/*
-// @match       *://invidious.namazso.eu/*
-// @match       *://invidious.osi.kr/*
-// @match       *://invidious.privacy.gd/*
-// @match       *://invidious.snopyta.org/*
-// @match       *://invidious.weblibre.org/*
-// @match       *://tube.cthd.icu/*
-// @match       *://vid.mint.lgbt/*
-// @match       *://vid.puffyan.us/*
-// @match       *://yewtu.be/*
-// @match       *://youtube.076.ne.jp/*
+// @match       *://odysee.com/*
 // @match       *://yt.artemislena.eu/*
 // @match       *://tube.cadence.moe/*
-// @match       *://odysee.com/*
+// @match       *://y.com.sb/*
+// @match       *://invidious.dhusch.de/*
+// @match       *://invidious.esmailelbob.xyz/*
+// @match       *://invidious.flokinet.to/*
+// @match       *://invidious.garudalinux.org/*
+// @match       *://invidious.kavin.rocks/*
+// @match       *://invidious.namazso.eu/*
+// @match       *://invidious.nerdvpn.de/*
+// @match       *://inv.odyssey346.dev/*
+// @match       *://invidious.projectsegfau.lt/*
+// @match       *://inv.bp.projectsegfau.lt/*
+// @match       *://vid.puffyan.us/*
+// @match       *://invidious.rhyshl.live/*
+// @match       *://inv.riverside.rocks/*
+// @match       *://invidious.sethforprivacy.com/*
+// @match       *://invidious.slipfox.xyz/*
+// @match       *://invidious.snopyta.org/*
+// @match       *://invidious.tiekoetter.com/*
+// @match       *://inv.vern.cc/*
+// @match       *://invidious.weblibre.org/*
+// @match       *://invidio.xamh.de/*
+// @match       *://yewtu.be/*
+// @match       *://youtube.076.ne.jp/*
 // @grant       GM.getValue
 // @grant       GM.setValue
 // @grant       GM.notification
@@ -42,7 +45,7 @@
 // @connect     *
 // @require     https://greasemonkey.github.io/gm4-polyfill/gm4-polyfill.js
 // @run-at      document-start
-// @version     2022.11.2
+// @version     2022.12
 // @license     AGPL-3.0-or-later
 // @description Skips annoying intros, sponsors and w/e on YouTube and its frontends like Invidious and CloudTube using the SponsorBlock API.
 // ==/UserScript==
@@ -69,9 +72,8 @@
         let segurl = "";
         let result = [];
         let rBefore = -1;
-        let cat = ["poi_highlight"];
-        if (s3settings.categories & categories.sponsor)
-            cat.push("sponsor");
+        let rPoi = null;
+        let cat = [];
         if (s3settings.categories & categories.intro)
             cat.push("intro");
         if (s3settings.categories & categories.outro)
@@ -86,6 +88,10 @@
             cat.push("music_offtopic");
         if (s3settings.categories & categories.filler)
             cat.push("filler");
+        if ((s3settings.categories & categories.sponsor) || cat.length === 0)
+            cat.push("sponsor");
+        if (s3settings.notifications)
+            cat.push("poi_highlight");
 
         if (s3settings.disable_hashing)
         {
@@ -124,6 +130,11 @@
                 {
                     rBefore = response[x].segments.length;
                     result = processSegments(response[x].segments);
+                    if (result[result.length - 1].category === "poi_highlight")
+                    {
+                        rPoi = result[result.length - 1].segment[0];
+                        result.splice((result.length - 1), 1);
+                    }
                     break;
                 }
             }
@@ -137,26 +148,6 @@
             favicon = null;
         }
         if (result.length > 0) {
-            if (s3settings.notifications && window.self === window.top) {
-                let ntxt = "";
-                if (result.length === rBefore) {
-                    ntxt = "Received " + result.length;
-                    if (result.length > 1) {
-                        ntxt += " segments."
-                    } else {
-                        ntxt += " segment."
-                    }
-                } else {
-                    ntxt = "Received " + rBefore + " segments, " + result.length + " after processed.";
-                }
-                setTimeout(() => { GM.notification({
-                    title: "Skippable segments found!",
-                    text: ntxt + "\n\u00AD\n" + document.title + " (Video ID: " + videoId + ")",
-                    silent: true,
-                    timeout: 5000,
-                    image: favicon,
-                })}, 600);
-            }
             let player = await (function() {
                 return new Promise(resolve => {
                     let pltimer = window.setInterval(function() {
@@ -172,11 +163,54 @@
                     }, 10);
                 });
             })();
+            if (s3settings.notifications && window.self === window.top) {
+                let ntxt = "";
+                if (result.length === rBefore) {
+                    ntxt = "Received " + result.length;
+                    if (result.length > 1) {
+                        ntxt += " segments."
+                    } else {
+                        ntxt += " segment."
+                    }
+                } else {
+                    ntxt = "Received " + rBefore + " segments, " + result.length + " after processed.";
+                }
+                let noti = {
+                    title: "Skippable segments found!",
+                    text: ntxt + "\n\u00AD\n" + document.title + " (Video ID: " + videoId + ")",
+                    silent: true,
+                    timeout: 5000,
+                    image: favicon,
+                };
+                if (!!rPoi)
+                {
+                    const date = new Date(0);
+                    date.setSeconds(Math.floor(rPoi));
+                    noti.text = noti.text.replace("\n\u00AD\n", "\n\u00AD\nThis video has a highlight segment at " + date.toISOString().substring(11, 19).split("00:").pop() + ".\nClick here to skip to it.\n\u00AD\n");
+                    noti.onclick = function(){ player.currentTime = rPoi; };
+                }
+                GM.notification(noti);
+            }
+            const pfunc = function(){
+                if (s3settings.notifications && !!rPoi && player.currentTime < rPoi) {
+                    const date = new Date(0);
+                    date.setSeconds(Math.floor(rPoi));
+                    GM.notification({
+                        title: "Point of interest found!",
+                        text: "This video has a highlight segment at " + date.toISOString().substring(11, 19).split("00:").pop() + ".\nClick here to skip to it.\n\u00AD\n" + document.title + " (Video ID: " + videoId + ")",
+                        onclick: function(){ player.currentTime = rPoi; },
+                        silent: true,
+                        timeout: 5000,
+                        image: favicon,
+                    });
+                }
+            };
             const vfunc = function() {
                 if (location.hostname !== 'odysee.com' &&
                     location.pathname.indexOf(videoId) === -1 && location.search.indexOf('v=' + videoId) === -1)
                 {
                     player.removeEventListener('timeupdate', vfunc);
+                    player.removeEventListener('play', pfunc);
                     return;
                 }
 
@@ -207,26 +241,32 @@
                 prevTime = player.currentTime;
             };
             player.addEventListener('timeupdate', vfunc);
+            player.addEventListener('play', pfunc);
         }
     }
 
     function processSegments(segments) {
         if (typeof segments === 'object') {
             let newSegments = [];
-            let newKey = 0;
+            let highlight = null;
+            let hUpvotes = s3settings.upvotes - 1;
             for (let x = 0; x < segments.length; x++) {
-                if (x > 0 && newSegments[newKey - 1].segment[1] >= segments[x].segment[0] && newSegments[newKey - 1].segment[1] < segments[x].segment[1] && segments[x].votes >= s3settings.upvotes) {
-                    newSegments[newKey - 1].segment[1] = segments[x].segment[1];
-                    newSegments[newKey - 1].category = "combined";
-                    console.log(x + " combined with " + (newKey - 1));
-                } else if (segments[x].votes < s3settings.upvotes || (x > 0 && newSegments[newKey - 1].segment[1] >= segments[x].segment[0] && newSegments[newKey - 1].segment[1] >= segments[x].segment[1])) {
+                if (segments[x].category === "poi_highlight" && segments[x].votes > hUpvotes) {
+                    highlight = segments[x];
+                    hUpvotes = segments[x].upvotes;
+                } else if (x > 0 && newSegments[newSegments.length - 1].segment[1] >= segments[x].segment[0] && newSegments[newSegments.length - 1].segment[1] < segments[x].segment[1] && segments[x].votes >= s3settings.upvotes) {
+                    newSegments[newSegments.length - 1].segment[1] = segments[x].segment[1];
+                    newSegments[newSegments.length - 1].category = "combined";
+                    console.log(x + " combined with " + (newSegments.length - 1));
+                } else if (segments[x].votes < s3settings.upvotes || (x > 0 && newSegments[newSegments.length - 1].segment[1] >= segments[x].segment[0] && newSegments[newSegments.length - 1].segment[1] >= segments[x].segment[1])) {
                     console.log("Ignoring segment " + x);
                 } else {
-                    newSegments[newKey] = segments[x];
-                    console.log(newKey + " added");
-                    newKey++;
+                    newSegments.push(segments[x]);
+                    console.log((newSegments.length - 1) + " added");
                 }
             }
+            if (!!highlight)
+                newSegments.push(highlight);
             return newSegments;
         } else {
             return [];
