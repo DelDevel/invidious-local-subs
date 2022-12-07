@@ -6,6 +6,13 @@ My scripts are mostly tested on Violentmonkey on Firefox but I do try to maintai
 
 If you don't already have an userscript manager installed in your browser, I recommend getting [ViolentMonkey](https://violentmonkey.github.io/).
 
+## Suport My Work
+
+**Kofi:** https://ko-fi.com/mthsk  
+**BTC:** 12oAx9b6YiiTrnnqmbXi2tikrT5a3GcP16  
+**ETH:** 0x4F5db2cE69E6b95d642c89E90Bc1d9e0C026C058  
+**XMR:** 89fGtdcRrFeA8XSgCzjsttFqQznVBRH768YPCSxZZxhTdJbjmfSHxxec4UB2hWrKS14tBXSTjwQp4W3LLRVj7fC9HQaYV33
+
 ### Dark Mode by default
 
 Automatically enables the built-in Dark Mode on various sites.
