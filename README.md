@@ -6,7 +6,7 @@ My scripts are mostly tested on Violentmonkey on Firefox but I do try to maintai
 
 If you don't already have an userscript manager installed in your browser, I recommend getting [ViolentMonkey](https://violentmonkey.github.io/).
 
-## Suport My Work
+## Support My Work
 
 **Kofi:** https://ko-fi.com/mthsk  
 **BTC:** 12oAx9b6YiiTrnnqmbXi2tikrT5a3GcP16  
