@@ -441,7 +441,7 @@
 
                               if (mutation.addedNodes[x].id === "vjs_video_3_html5_api")
                               {
-                                  let thumb = document.body.querySelector('div[class="content__cover"]');
+                                  let thumb = document.body.querySelector('div.content__cover');
                                   if (!!thumb) {
                                       thumb = thumb.style.backgroundImage;
                                       thumb = thumb.substring(thumb.indexOf('\"') + 1).split('\"')[0];
