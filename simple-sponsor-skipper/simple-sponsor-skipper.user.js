@@ -45,7 +45,7 @@
 // @connect     *
 // @require     https://greasemonkey.github.io/gm4-polyfill/gm4-polyfill.js
 // @run-at      document-start
-// @version     2022.12
+// @version     2023.01
 // @license     AGPL-3.0-or-later
 // @description Skips annoying intros, sponsors and w/e on YouTube and its frontends like Invidious and CloudTube using the SponsorBlock API.
 // ==/UserScript==
