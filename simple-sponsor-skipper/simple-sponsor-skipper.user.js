@@ -439,7 +439,7 @@
                               if (!mutation.addedNodes[x].tagName)
                                   continue;
 
-                              if (mutation.addedNodes[x].id === "vjs_video_3_html5_api")
+                              if (mutation.addedNodes[x].id === "vjs_video_3")
                               {
                                   let thumb = document.body.querySelector('div.content__cover');
                                   if (!!thumb) {
