@@ -6,6 +6,7 @@
 // @updateURL   https://codeberg.org/mthsk/userscripts/raw/branch/master/inv-local-subscriptions/inv-local-subscriptions.user.js
 // @match       *://invidio.xamh.de/*
 // @match       *://vid.puffyan.us/*
+// @match       *://watch.thekitty.zone/*
 // @match       *://y.com.sb/*
 // @match       *://yewtu.be/*
 // @match       *://youtube.076.ne.jp/*
@@ -14,7 +15,7 @@
 // @exclude     *://invidious.dhusch.de/*
 // @exclude     *://invidious.nerdvpn.de/*
 // @exclude     *://invidious.weblibre.org/*
-// @version     2022.12
+// @version     2023.01
 // @description Implements local subscriptions on Invidious.
 // @run-at      document-end
 // @grant       GM.getValue
@@ -170,7 +171,7 @@
                 newpipe_subs.subscriptions.push({service_id: 0, url: "https://www.youtube.com/channel/" + e.id, name: e.name});
             });
             const a = document.createElement("a");
-            const file = new Blob([JSON.stringify(newpipe_subs)], {type: "text/plain"});
+            const file = new Blob([JSON.stringify(newpipe_subs)], {type: "application/json"});
             a.href = URL.createObjectURL(file);
             a.download = "newpipe_subscriptions_" + YYYYMMDDHHmm + ".json";
             a.click();
@@ -248,7 +249,7 @@
             human = "minute";
         }
         else {
-            tvalue = seconds;
+            tvalue = Math.floor(seconds);
             human = "second";
         }
 
@@ -282,34 +283,45 @@
         }
     }
 
+    async function getJson(url) {
+        const resp = await (function() {
+            return new Promise((resolve, reject) => {
+                GM.xmlHttpRequest({
+                    method: 'GET',
+                    url: url,
+                    headers: {
+                        'Accept': 'application/json'
+                    },
+                    onload: resolve,
+                    onabort: reject,
+                    onerror: reject
+                });
+            });
+        })();
+        try {
+            return JSON.parse(resp.responseText);
+        } catch (e) { return { error: true }; }
+    }
+
     async function getSubscriptionFeed(forced = false) {
         let feed = await GM.getValue('feed');
         if (forced || !feed || feed.last < (Date.now() - 1800000))
         {
+            let hadError = false;
             feed = [];
             const instances = [];
-            const resp = await (function() {
-                return new Promise(resolve => {
-                    GM.xmlHttpRequest({
-                        method: 'GET',
-                        url: "https://api.invidious.io/instances.json",
-                        headers: {
-                            'Accept': 'application/json'
-                        },
-                        onload: resolve
-                    });
-                });
-            })();
-            try {
-                let response = JSON.parse(resp.responseText);
-                response.forEach(function(e) {
-                    if (e[1].type === "https" && e[1].api)
-                    {
-                        instances.push(e[0]);
-                    }
-                });
-                console.log(instances);
-            } catch (e) { }
+            let jsonInstances = await getJson("https://api.invidious.io/instances.json");
+
+            if ((Object.keys(jsonInstances).length === 0 && jsonInstances.construct) || (jsonInstances.hasOwnProperty("error") && jsonInstances.error))
+                return;
+
+            jsonInstances.forEach(function(e) {
+                if (e[1].type === "https" && e[1].api)
+                {
+                    instances.push(e[0]);
+                }
+            });
+            console.log(instances);
 
             if (instances.length <= 0)
                 return;
@@ -317,26 +329,26 @@
             for (let x = 0; x < subscriptions.length; x++)
             {
                 document.getElementById('invlocal-loading').textContent = "Fetching channel " + (x + 1) + " out of " + subscriptions.length;
-                const resp = await (function() {
-                      return new Promise(resolve => {
-                          GM.xmlHttpRequest({
-                              method: 'GET',
-                              url: "https://" + instances[Math.floor(Math.random()*instances.length)] + "/api/v1/channels/videos/" + subscriptions[x].id + "?fields=title,videoId,author,authorId,viewCount,published,lengthSeconds",
-                              headers: {
-                                  'Accept': 'application/json'
-                              },
-                              onload: resolve
-                          });
-                      });
-                  })();
-                  try {
-                      let response = JSON.parse(resp.responseText);
-                      feed = feed.concat(response);
-                  } catch (e) { }
+                let response = await getJson("https://" + instances[Math.floor(Math.random()*instances.length)] + "/api/v1/channels/videos/" + subscriptions[x].id + "?fields=title,videoId,author,authorId,viewCount,published,lengthSeconds,videos");
+
+                if (response.hasOwnProperty("error"))
+                {
+                    hadError = true;
+                    continue;
+                }
+                else if (response.hasOwnProperty("videos"))
+                    response = response.videos;
+
+                feed = feed.concat(response);
             }
 
             feed.sort((a, b) => b.published - a.published);
-            await GM.setValue('feed', {last: Date.now(), feed: feed});
+
+            if (!hadError)
+                await GM.setValue('feed', {last: Date.now(), feed: feed});
+            else
+                await GM.setValue('feed', {last: 0, feed: feed});
+
             return feed;
         }
         else
