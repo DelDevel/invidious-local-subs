@@ -13,11 +13,11 @@ If you don't already have an userscript manager installed in your browser, I rec
 **ETH:** 0x4F5db2cE69E6b95d642c89E90Bc1d9e0C026C058  
 **XMR:** 89fGtdcRrFeA8XSgCzjsttFqQznVBRH768YPCSxZZxhTdJbjmfSHxxec4UB2hWrKS14tBXSTjwQp4W3LLRVj7fC9HQaYV33
 
-### Dark Mode by default
+### Invidious Local Subscriptions
 
-Automatically enables the built-in Dark Mode on various sites.
+Implements local subscriptions on Invidious. Instance has to support the /feed/popular endpoint for it to work correctly.
 
-#### Installation: [Click here](https://codeberg.org/mthsk/userscripts/raw/branch/master/dark-mode-by-default/dark-mode-by-default.user.js), or get it on [SleazyFork](https://sleazyfork.org/scripts/429388-dark-mode-by-default).
+#### Installation: [Click here](https://codeberg.org/mthsk/userscripts/raw/branch/master/inv-local-subscriptions/inv-local-subscriptions.user.js), or get it on [GreasyFork](https://greasyfork.org/scripts/457411-invidious-local-subscriptions).
 
 ### Invidious Embed
 
