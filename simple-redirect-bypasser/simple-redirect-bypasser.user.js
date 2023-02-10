@@ -1,17 +1,22 @@
 // ==UserScript==
 // @name        Simple Redirect Bypasser
+// @match       *://*/go/?url=*
 // @match       *://*/redirect*
 // @match       *://*/download2/campanha.php*
 // @match       *://*/instagram/campanha.php*
 // @match       *://*.4channel.org/derefer*
 // @match       *://*.4chan.org/derefer*
 // @match       *://*.instagram.com/linkshim/*
+// @match       *://jump.kolyma.net/?*
 // @match       *://*.pixiv.net/jump.php*
 // @match       *://redirect.epicgames.com/*
 // @match       *://steamcommunity.com/linkfilter/*
+// @match       *://redirect.viglink.com/*
+// @match       *://vk.com/away.php*
+// @match       *://jump.totsugeki.com/to/re.php?u=*
 // @grant       none
 // @author      SkauOfArcadia
-// @version     2022.10
+// @version     2023.02
 // @contactURL  https://t.me/SkauOfArcadia
 // @homepage    https://codeberg.org/mthsk/userscripts/src/branch/master/simple-redirect-bypasser
 // @downloadURL https://codeberg.org/mthsk/userscripts/raw/branch/master/simple-redirect-bypasser/simple-redirect-bypasser.user.js
@@ -43,6 +48,7 @@
     {
         let params = new URLSearchParams(urlparams);
         params.forEach((param) => navigateIfUrl(param));
+        navigateIfUrl(urlparams.substring(1));
     }
 
     function navigateIfUrl(url)
