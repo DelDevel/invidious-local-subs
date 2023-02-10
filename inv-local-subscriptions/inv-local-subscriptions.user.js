@@ -12,10 +12,7 @@
 // @match       *://youtube.076.ne.jp/*
 // @match       *://inv.*.*/*
 // @match       *://invidious.*/*
-// @exclude     *://invidious.dhusch.de/*
-// @exclude     *://invidious.nerdvpn.de/*
-// @exclude     *://invidious.weblibre.org/*
-// @version     2023.01
+// @version     2023.02
 // @description Implements local subscriptions on Invidious.
 // @run-at      document-end
 // @grant       GM.getValue
@@ -40,37 +37,58 @@
 (async function() {
     "use strict";
     let subscriptions = await GM.getValue("subscriptions") || [];
-    let settings = await GM.getValue("settings") || {redirect: false};
+    let settings = await GM.getValue("settings") || {redirect: false, odysee: false, usepiped: false, pipedinstance: "https://pipedapi-libre.kavin.rocks"};
 
-    if (location.pathname.toLowerCase().startsWith("/feed/"))
+    if (settings.redirect && location.pathname === "/")
+        location.replace(location.protocol + "//" + location.hostname + "/search?q=" + makeid((Math.floor(Math.random() * 16) + 16)) + "#invlocal");
+    else if (settings.redirect)
+        document.body.querySelectorAll('a[href="/"]').forEach((el) => el.setAttribute("href","/search?q=" + makeid((Math.floor(Math.random() * 16) + 16)) + "#invlocal"));
+
+    if (location.pathname.toLowerCase() === "/search" && location.search.toLowerCase().startsWith("?q=") && !location.search.includes('&') && location.hash.toLowerCase() === "#invlocal")
     {
-        if (location.hash.toLowerCase() === "#invlocal") {
-            document.getElementById("contents").querySelector('div[class="pure-g"]').innerHTML = '\<center id="invlocal-loading" style="letter-spacing: 0 !important;">Fetching subscriptions...</center>';
-            let feed = await getSubscriptionFeed(false);
-            displaySubscriptionFeed(feed);
-            let st = 40;
-            addEventListener('scroll', function() {
-             if (window.innerHeight + window.pageYOffset >= document.body.offsetHeight && !document.getElementById("invlocal-loading")) {
-              displaySubscriptionFeed(feed, st);
-              st = st + 40;
-             }});
+        const navbar = document.createElement("div");
+        navbar.classList.add("feed-menu");
+        navbar.innerHTML = '<a href="/feed/popular" class="feed-menu-item pure-menu-heading">Popular</a><a href="/feed/trending" class="feed-menu-item pure-menu-heading">Trending</a><a id="invlocal-refresh" href="javascript:void(0);" class="feed-menu-item pure-menu-heading">Refresh Subscriptions</a>';
+        const filters = document.getElementById("filters");
+        filters.parentElement.replaceChild(navbar, filters);
+        document.getElementById("contents").querySelector('div[class="pure-g"]').innerHTML = '\<center id="invlocal-loading" style="letter-spacing: 0 !important;">Fetching subscriptions...</center>';
+        document.getElementById("contents").querySelectorAll('div > a[href*="&page="]').forEach(el => el.parentElement.remove());
+        document.getElementById("contents").getElementsByTagName("hr")[0].remove();
+        document.getElementById("searchbox").value = "";
+        document.title = "Local Subscription Feed - Invidious";
+        let feed;
+        if (settings.hasOwnProperty("usepiped") && settings.usepiped)
+            feed = await getPipedSubscriptionFeed(settings.pipedinstance);
+        else
+            feed = await getSubscriptionFeed(false);
+        displaySubscriptionFeed(feed);
+        let st = 40;
+        addEventListener('scroll', function() {
+         if (window.innerHeight + window.pageYOffset >= document.body.offsetHeight && !document.getElementById("invlocal-loading")) {
+          displaySubscriptionFeed(feed, st);
+          st = st + 40;
+         }});
 
-            document.getElementsByClassName("feed-menu")[0].innerHTML = document.getElementsByClassName("feed-menu")[0].innerHTML + "\<a id=\"invlocal-refresh\" href=\"javascript:void(0);\" class=\"feed-menu-item pure-menu-heading\">Refresh Subscriptions</a>";
-            document.getElementById("invlocal-refresh").addEventListener('click', async function (e) {
-                if (!e.target.hasAttribute('disabled'))
-                {
-                    e.target.setAttribute('disabled', '');
-                    document.getElementById("contents").querySelector('div[class="pure-g"]').innerHTML = '\<center id="invlocal-loading" style="letter-spacing: 0 !important;">Fetching subscriptions...</center>';
+        document.getElementById("invlocal-refresh").addEventListener('click', async function (e) {
+            if (!e.target.hasAttribute('disabled'))
+            {
+                e.target.setAttribute('disabled', '');
+                document.getElementById("contents").querySelector('div[class="pure-g"]').innerHTML = '\<center id="invlocal-loading" style="letter-spacing: 0 !important;">Fetching subscriptions...</center>';
+
+                if (settings.hasOwnProperty("usepiped") && settings.usepiped)
+                    feed = await getPipedSubscriptionFeed(settings.pipedinstance);
+                else
                     feed = await getSubscriptionFeed(true);
-                    displaySubscriptionFeed(feed);
-                    st = 40;
-                    e.target.removeAttribute('disabled');
-                }
-            });
-        }
-        else {
-            document.getElementsByClassName("feed-menu")[0].innerHTML = document.getElementsByClassName("feed-menu")[0].innerHTML + "\<a href=\"/feed/#invlocal\" class=\"feed-menu-item pure-menu-heading\">Local Subscriptions</a>"
-        }
+
+                displaySubscriptionFeed(feed);
+                st = 40;
+                e.target.removeAttribute('disabled');
+            }
+        });
+    }
+    else if (location.pathname.toLowerCase().startsWith("/feed/"))
+    {
+        document.getElementsByClassName("feed-menu")[0].innerHTML = document.getElementsByClassName("feed-menu")[0].innerHTML + "\<a href=\"/search?q=" + makeid((Math.floor(Math.random() * 16) + 16)) + "#invlocal\" class=\"feed-menu-item pure-menu-heading\">Local Subscriptions</a>"
     }
     else if (location.pathname.toLowerCase().startsWith("/channel/") || location.pathname.toLowerCase() === "/watch")
     {
@@ -121,6 +139,11 @@
             console.log(subscriptions);
             await GM.setValue('subscriptions', subscriptions);
         });
+
+        if (location.pathname.toLowerCase() === "/watch")
+        {
+            window.setInterval(getSubscriptionFeed(false, true), 300000);
+        }
     }
     else if (location.pathname.toLowerCase() === "/preferences")
     {
@@ -131,11 +154,14 @@
         nulegend.textContent = "Local Subscribe Preferences";
         const nusettings = document.createElement('div');
         nusettings.setAttribute("class", "pure-control-group");
-        nusettings.innerHTML = '\<div class="pure-control-group"><div class="pure-control-group"><label for="invlocal_redirect">Redirect from the invidious home page to local subscriptions page: </label><input id="invlocal_redirect" type="checkbox"></div><div class="pure-control-group"><label for="invlocal_import">Import subscriptions: </label><a id="invlocal_import" href="javascript:void(0);">Import...</a></div><div class="pure-control-group"><label for="invlocal_export">Export subscriptions: </label><a id="invlocal_export" href="javascript:void(0);">Export...</a></div></div>';
+        nusettings.innerHTML = '\<div class="pure-control-group"><div class="pure-control-group"><label for="invlocal_redirect">Redirect from the invidious home page to local subscriptions page: </label><input id="invlocal_redirect" type="checkbox"></div><div class="pure-control-group"><label for="invlocal_odysee">Display a "Watch on Odysee" button for videos that were synced to Odysee: </label><input id="invlocal_odysee" type="checkbox"></div><div class="pure-control-group"><label for="invlocal_usepiped">Fetch Subscriptions Through Piped: </label><input id="invlocal_usepiped" type="checkbox"></div><div class="pure-control-group"><label for="invlocal_pipedinstance">Database Instance:</label><input id="invlocal_pipedinstance" type="text"></div><div class="pure-control-group"><label for="invlocal_import">Import subscriptions: </label><a id="invlocal_import" href="javascript:void(0);">Import...</a></div><div class="pure-control-group"><label for="invlocal_export">Export subscriptions: </label><a id="invlocal_export" href="javascript:void(0);">Export...</a></div></div>';
         fieldset.insertBefore(nulegend, savebtn.parentElement);
         fieldset.insertBefore(nusettings, savebtn.parentElement);
 
         document.getElementById("invlocal_redirect").checked = settings.redirect;
+        document.getElementById("invlocal_odysee").checked = settings.odysee || false;
+        document.getElementById("invlocal_usepiped").checked = settings.usepiped || false;
+        document.getElementById("invlocal_pipedinstance").value = settings.pipedinstance || "https://pipedapi-libre.kavin.rocks";
 
         document.getElementById("invlocal_import").addEventListener("click", (ev) => {
             const input = document.createElement("input");
@@ -179,14 +205,25 @@
 
         savebtn.addEventListener("click", (ev) => {
             settings.redirect = document.getElementById("invlocal_redirect").checked;
+            settings.odysee = document.getElementById("invlocal_odysee").checked;
+            settings.usepiped = document.getElementById("invlocal_usepiped").checked;
+            if (document.getElementById("invlocal_pipedinstance").value.trim() != "")
+                settings.pipedinstance = document.getElementById("invlocal_pipedinstance").value.trim();
             GM.setValue('settings', settings);
         });
     }
 
-    if (settings.redirect && location.pathname === "/")
-        location.replace(location.protocol + "//" + location.hostname + "/feed/#invlocal");
-    else if (settings.redirect)
-        document.body.querySelectorAll('a[href="/"]').forEach((el) => el.setAttribute("href","/feed/#invlocal"));
+    function makeid(length) {
+        let result = '';
+        const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
+        const charactersLength = characters.length;
+        let counter = 0;
+        while (counter < length) {
+          result += characters.charAt(Math.floor(Math.random() * charactersLength));
+          counter += 1;
+        }
+        return result;
+    }
 
     function roundViews(views) {
         let rounded = 0;
@@ -259,7 +296,7 @@
             return tvalue + ' ' + human + " ago";
     }
 
-    function displaySubscriptionFeed(feed,start = 0) {
+    async function displaySubscriptionFeed(feed,start = 0) {
         const container = document.getElementById("contents").querySelector('div[class="pure-g"]');
 
         if (!container || start >= feed.length) {
@@ -275,35 +312,59 @@
         let finish = start + 39;
         if (finish > (feed.length - 1))
             finish = feed.length - 1;
+
+        const vidIds = [];
         for (let x = start; x <= finish; x++)
         {
+            vidIds.push(feed[x].videoId);
             const date = new Date(0);
             date.setSeconds(feed[x].lengthSeconds);
-            container.innerHTML = container.innerHTML + '\<div class="pure-u-1 pure-u-md-1-4"><div class="h-box"><a style="width:100%" href="/watch?v=' + feed[x].videoId + '"><div class="thumbnail"><img tabindex="-1" class="thumbnail" src="/vi/' + feed[x].videoId + '/mqdefault.jpg"/> <p class="length">' + date.toISOString().substring(11, 19).split("00:").pop() + '\</p></div><p dir="auto">' + feed[x].title + '\</p></a><div class="video-card-row flexible"><div class="flex-left"><a href="/channel/' + feed[x].authorId + '"><p class="channel-name" dir="auto">' + feed[x].author + '\</p> </a></div> <div class="flex-right"><div class="icon-buttons"><a title="Watch on YouTube" href="https://www.youtube.com/watch?v=' + feed[x].videoId + '"><i class="icon ion-logo-youtube"></i></a> <a title="Audio mode" href="/watch?v=' + feed[x].videoId + '&amp;listen=1"><i class="icon ion-md-headset"></i></a> <a title="Switch Invidious Instance" href="https://redirect.invidious.io/watch?v=' + feed[x].videoId + '"><i class="icon ion-md-jet"></i></a></div></div></div> <div class="video-card-row flexible"><div class="flex-left"><p class="video-data" dir="auto">Shared ' + msToHumanTime(Date.now() - (feed[x].published * 1000)) + '\</p></div><div class="flex-right"><p class="video-data" dir="auto">' + roundViews(feed[x].viewCount) + '\</p></div></div></div></div>'
+            container.innerHTML = container.innerHTML + '\<div class="pure-u-1 pure-u-md-1-4"><div class="h-box"><a style="width:100%" href="/watch?v=' + feed[x].videoId + '"><div class="thumbnail"><img tabindex="-1" class="thumbnail" src="/vi/' + feed[x].videoId + '/mqdefault.jpg"/> <p class="length">' + date.toISOString().substring(11, 19).split("00:").pop() + '\</p></div><p dir="auto">' + feed[x].title + '\</p></a><div class="video-card-row flexible"><div class="flex-left"><a href="/channel/' + feed[x].authorId + '"><p class="channel-name" dir="auto">' + feed[x].author + '\</p> </a></div> <div class="flex-right"><div class="icon-buttons"><a title="Watch on YouTube" href="https://www.youtube.com/watch?v=' + feed[x].videoId + '"><i class="icon ion-logo-youtube"></i></a> <a class="invlocal-odysee" style="visibility: hidden !important;" title="Watch on Odysee" href="' + feed[x].videoId + '"><i class="icon ion-md-rocket"></i></a> <a title="Discuss on Reddit" href="https://www.reddit.com/search?q=url%3A%22' + feed[x].videoId + '%22+AND+%28site%3Ayoutube.com+OR+site%3Ayoutu.be+OR+site%3Ayoutube-nocookie.com%29&amp;restrict_sr=&amp;sort=top&amp;t=all"><i class="icon ion-logo-reddit"></i></a> <a title="Audio mode" href="/watch?v=' + feed[x].videoId + '&amp;listen=1"><i class="icon ion-md-headset"></i></a> <a title="Switch Invidious Instance" href="https://redirect.invidious.io/watch?v=' + feed[x].videoId + '"><i class="icon ion-md-jet"></i></a></div></div></div> <div class="video-card-row flexible"><div class="flex-left"><p class="video-data" dir="auto">Shared ' + msToHumanTime(Date.now() - (feed[x].published * 1000)) + '\</p></div><div class="flex-right"><p class="video-data" dir="auto">' + roundViews(feed[x].viewCount) + '\</p></div></div></div></div>'
         }
+        let odyUrls = {};
+        if (!!settings.odysee && settings.odysee) {
+            odyUrls = await getJson("https://api.odysee.com/yt/resolve?video_ids=" + encodeURIComponent(vidIds.join(',')), 0);
+            odyUrls = (!!odyUrls.data && !!odyUrls.data.videos ? odyUrls.data.videos : {});
+        }
+        const odyseeEls = document.body.querySelectorAll("a.invlocal-odysee[href]");
+        odyseeEls.forEach((ody) => {
+            let vId = ody.getAttribute('href');
+            if (!!settings.odysee && settings.odysee && odyUrls.hasOwnProperty(vId) && odyUrls[vId] !== null)
+            {
+                ody.href = "https://odysee.com/" + odyUrls[vId].replaceAll('#',':');
+                ody.removeAttribute("class");
+                ody.removeAttribute("style");
+            }
+            else {
+                ody.remove();
+            }
+        });
     }
 
-    async function getJson(url) {
-        const resp = await (function() {
-            return new Promise((resolve, reject) => {
-                GM.xmlHttpRequest({
-                    method: 'GET',
-                    url: url,
-                    headers: {
-                        'Accept': 'application/json'
-                    },
-                    onload: resolve,
-                    onabort: reject,
-                    onerror: reject
-                });
-            });
-        })();
+    async function getJson(url,timeout=10000) {
+        console.log("Connecting to " + url);
         try {
+            const resp = await (function() {
+                return new Promise((resolve, reject) => {
+                    GM.xmlHttpRequest({
+                        method: 'GET',
+                        url: url,
+                        timeout: timeout,
+                        headers: {
+                            'Accept': 'application/json'
+                        },
+                        onload: resolve,
+                        onabort: reject,
+                        onerror: reject,
+                        ontimeout: reject
+                    });
+                });
+            })();
             return JSON.parse(resp.responseText);
         } catch (e) { return { error: true }; }
     }
 
-    async function getSubscriptionFeed(forced = false) {
+    async function getSubscriptionFeed(forced = false, background = false) {
         let feed = await GM.getValue('feed');
         if (forced || !feed || feed.last < (Date.now() - 1800000))
         {
@@ -328,16 +389,44 @@
 
             for (let x = 0; x < subscriptions.length; x++)
             {
-                document.getElementById('invlocal-loading').textContent = "Fetching channel " + (x + 1) + " out of " + subscriptions.length;
+                if (!!document.getElementById('invlocal-loading'))
+                    document.getElementById('invlocal-loading').textContent = "Fetching channel " + (x + 1) + " out of " + subscriptions.length;
+
                 let response = await getJson("https://" + instances[Math.floor(Math.random()*instances.length)] + "/api/v1/channels/videos/" + subscriptions[x].id + "?fields=title,videoId,author,authorId,viewCount,published,lengthSeconds,videos");
 
-                if (response.hasOwnProperty("error"))
+                if (response.hasOwnProperty("error") && background)
+                    return;
+                else if (response.hasOwnProperty("error"))
                 {
                     hadError = true;
                     continue;
                 }
                 else if (response.hasOwnProperty("videos"))
                     response = response.videos;
+
+                let playlist = await getJson("https://" + instances[Math.floor(Math.random()*instances.length)] + "/api/v1/playlists/" + subscriptions[x].id + "?fields=videos(title,videoId,author,authorId,lengthSeconds)");
+                if (playlist.hasOwnProperty("videos"))
+                {
+                    playlist = playlist.videos;
+
+                    if (playlist.length > 10)
+                        playlist = playlist.slice(0, 10);
+
+                    let plv = 0;
+                    playlist.forEach(async function(vid) {
+                        if (!response.some(e => e.videoId === vid.videoId))
+                        {
+                            let vidData = await getJson("https://" + instances[Math.floor(Math.random()*instances.length)] + "/api/v1/videos/" + vid.videoId + "?fields=viewCount,published");
+                            if (!vidData.hasOwnProperty("error"))
+                            {
+                                vid.viewCount = vidData.viewCount;
+                                vid.published = vidData.published;
+                                feed.push(vid);
+                            }
+                        }
+                        plv++;
+                    });
+                }
 
                 feed = feed.concat(response);
             }
@@ -353,5 +442,28 @@
         }
         else
             return feed.feed;
+    }
+
+    async function getPipedSubscriptionFeed(api = "pipedapi.kavin.rocks") {
+        let feed = [];
+        const channels = [];
+        subscriptions.forEach(ch => channels.push(ch.id));
+        const response = await getJson(api + "/feed/unauthenticated?channels=" + encodeURIComponent(channels.join(',')), 0);
+
+        if (response.hasOwnProperty("error"))
+        {
+            feed = await GM.getValue('feed');
+
+            if (!!feed && !!feed.feed)
+                return feed.feed;
+            else
+                return [];
+        }
+
+        response.forEach((e) => {
+            feed.push({title: e.title, videoId: e.url.split("?v=").pop(), author: e.uploaderName, authorId: e.uploaderUrl.split("/channel/").pop(), viewCount: e.views, published: (e.uploaded / 1000), lengthSeconds: e.duration});
+        });
+        await GM.setValue('feed', {last: Date.now(), feed: feed});
+        return feed;
     }
 })();
