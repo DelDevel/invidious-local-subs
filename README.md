@@ -15,7 +15,7 @@ If you don't already have an userscript manager installed in your browser, I rec
 
 ### Invidious Local Subscriptions
 
-Implements local subscriptions on Invidious. Instance has to support the /feed/popular endpoint for it to work correctly.
+Implements local subscriptions on Invidious. Should work on any Invidious instance.
 
 #### Installation: [Click here](https://codeberg.org/mthsk/userscripts/raw/branch/master/inv-local-subscriptions/inv-local-subscriptions.user.js), or get it on [GreasyFork](https://greasyfork.org/scripts/457411-invidious-local-subscriptions).
 
