@@ -9,7 +9,7 @@
 // @include     *
 // @exclude     http://web.archive.org/web/*
 // @inject-into content
-// @version     2022.09
+// @version     2023.04
 // @grant       none
 // @allFrames   true
 // @license     AGPL-3.0-or-later
@@ -30,7 +30,7 @@
  */
 (function() {
     "use strict";
-    const rimgo = "i.bcow.xyz";
+    const rimgo = "rimgo.projectsegfau.lt";
     const observer = new MutationObserver(mutate);
     observer.observe(document, {
         childList: true,
