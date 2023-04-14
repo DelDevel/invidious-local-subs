@@ -2,11 +2,12 @@
 // @name        Simple Libre Redirects
 // @description	Redirects you from big tech websites to their Free-as-in-freedom implementations.
 // @author      SkauOfArcadia
-// @version     2022.11
+// @version     2023.04
 // @homepage    https://codeberg.org/mthsk/userscripts/src/branch/master/simple-libre-redirects
 // @contactURL  https://t.me/SkauOfArcadia
 // @updateURL       https://codeberg.org/mthsk/userscripts/raw/branch/master/simple-libre-redirects/simple-libre-redirects.user.js
 // @downloadURL     https://codeberg.org/mthsk/userscripts/raw/branch/master/simple-libre-redirects/simple-libre-redirects.user.js
+// @match       *://cinapse.co/*
 // @match       *://imgur.com/*
 // @match       *://i.imgur.com/*
 // @match       *://imgur.io/*
@@ -22,6 +23,7 @@
 // @match       *://m.youtube.com/*
 // @match       *://youtu.be/*
 // @match       *://music.youtube.com/*
+// @match       *://*.wikiless.org/*
 // @exclude     *://www.instagram.com/explore/*
 // @exclude     *://*.youtube.com/embed/*
 // @run-at      document-start
@@ -44,7 +46,7 @@
  */
 (function() {
     "use strict";
-    const rimgoInstance = "i.bcow.xyz"; //defines the Rimgo instance to be used.
+    const rimgoInstance = "ri.zzls.xyz"; //defines the Rimgo instance to be used.
     const gramInstance = "bibliogram.org"; //defines the Bibliogram instance to be used.
     const tedditInstance = "teddit.net"; //defines the Teddit/Libreddit instance to be used.
     const nitterInstance = "nitter.net"; //defines the Nitter instance to be used.
@@ -91,8 +93,7 @@
                 window.location.replace("https://" + tedditInstance + window.location.pathname + window.location.search + window.location.hash);
             }
             break;
-        case "medium.com":
-        case "www.medium.com":
+        case "cinapse.co":
             window.location.replace("https://" + scribeInstance + window.location.pathname + window.location.search + window.location.hash);
             break;
         case "tiktok.com":
@@ -148,7 +149,15 @@
             else if (window.location.hostname === "wikipedia.org" || window.location.hostname.endsWith('.wikipedia.org')) {
                 if (window.location.hostname !== "wikipedia.org" && window.location.hostname !== "www.wikipedia.org")
                     params.set('lang', window.location.hostname.split('.')[0]);
+                params.set('useskin', 'vector');
                 window.location.replace("https://" + wikiInstance + window.location.pathname + '?' + params);
+            }
+            else if ((window.location.hostname === wikiInstance || window.location.hostname.endsWith('.' + wikiInstance)) && !params.has('useskin')) {
+                params.set('useskin', 'vector');
+                window.location.replace("https://" + wikiInstance + window.location.pathname + '?' + params);
+            }
+            else if (window.location.hostname === "medium.com" || window.location.hostname.endsWith('.medium.com')) {
+                window.location.replace("https://" + scribeInstance + window.location.pathname + window.location.search + window.location.hash);
             }
             break;
     }
