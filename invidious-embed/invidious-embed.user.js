@@ -2,19 +2,18 @@
 // @name        Invidious (yewtu.be) embed
 // @description Replace YouTube embeds with yewtu.be embeds.
 // @author      Backend & SkauOfArcadia
-// @homepage https://skau.neocities.org/
-// @contactURL https://t.me/SkauOfArcadia
-// @updateURL       https://codeberg.org/mthsk/userscripts/raw/branch/master/invidious-embed/invidious-embed.user.js
-// @downloadURL     https://codeberg.org/mthsk/userscripts/raw/branch/master/invidious-embed/invidious-embed.user.js
+// @homepage    https://codeberg.org/mthsk/userscripts/src/branch/master/invidious-embed
+// @updateURL   https://codeberg.org/mthsk/userscripts/raw/branch/master/invidious-embed/invidious-embed.user.js
+// @downloadURL https://codeberg.org/mthsk/userscripts/raw/branch/master/invidious-embed/invidious-embed.user.js
 // @include     *
-// @exclude *://*.youtube.com/*
-// @exclude *://*.google.com/*
-// @exclude *://turntable.fm/*
-// @exclude *://web.archive.org/web/*
-// @exclude *://*/embed/*
-// @exclude *://*/watch?v=*
+// @exclude     *://*.youtube.com/*
+// @exclude     *://*.google.com/*
+// @exclude     *://turntable.fm/*
+// @exclude     *://web.archive.org/web/*
+// @exclude     *://*/embed/*
+// @exclude     *://*/watch?v=*
 // @inject-into content
-// @version     2022.09-1
+// @version     2023.05
 // @grant       none
 // @allFrames   true
 // ==/UserScript==
@@ -63,15 +62,15 @@
             }
             else if (invid.toLowerCase().indexOf('/embed/') !== -1)
             {
-                invid = 'https://' + instance + '/embed/' + invid.substring(invid.toLowerCase().indexOf('/embed/') + 7).split('/')[0];
+                invid = 'https://' + instance + '/embed/' + invid.substring(invid.toLowerCase().indexOf('/embed/') + 7).split('/')[0].split(';')[0];
             }
             else if (invid.toLowerCase().indexOf('/v/') !== -1)
             {
-                invid = 'https://' + instance + '/embed/' + invid.substring(invid.toLowerCase().indexOf('/v/') + 3).split('/')[0];
+                invid = 'https://' + instance + '/embed/' + invid.substring(invid.toLowerCase().indexOf('/v/') + 3).split('/')[0].split(';')[0];
             }
             else
             {
-                invid = 'https://' + instance + '/embed/' + invid.split('/')[3];
+                invid = 'https://' + instance + '/embed/' + invid.split('/')[3].split(';')[0];
             }
 
             if (auto !== -1) {
@@ -111,10 +110,11 @@
 
             if (thumbsrc.hostname === "img.youtube.com" || thumbsrc.hostname === "i.ytimg.com")
             {
-                if (thumb.hasAttribute('srcset') && thumb.srcset.indexOf(thumbsrc) !== -1)
-                {
-                    thumb.setAttribute('srcset', thumb.srcset.replace(thumbsrc, thumbsrc.protocol + '//' + instance + thumbsrc.pathname + thumbsrc.search + thumbsrc.hash));
-                }
+                thumb.getAttributeNames().forEach(attrName => {
+                  if (attrName !== 'src' && thumb.getAttribute(attrName).indexOf(thumbsrc.hostname) !== -1)
+                      thumb.setAttribute(attrName, thumb.getAttribute(attrName).replace(thumbsrc.hostname, instance));
+                });
+
                 thumb.setAttribute('src', thumbsrc.protocol + '//' + instance + thumbsrc.pathname + thumbsrc.search + thumbsrc.hash);
             }
         }
