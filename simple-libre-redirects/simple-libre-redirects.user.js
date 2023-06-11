@@ -2,7 +2,7 @@
 // @name        Simple Libre Redirects
 // @description	Redirects you from big tech websites to their Free-as-in-freedom implementations.
 // @author      SkauOfArcadia
-// @version     2023.04
+// @version     2023.06
 // @homepage    https://codeberg.org/mthsk/userscripts/src/branch/master/simple-libre-redirects
 // @contactURL  https://t.me/SkauOfArcadia
 // @updateURL       https://codeberg.org/mthsk/userscripts/raw/branch/master/simple-libre-redirects/simple-libre-redirects.user.js
@@ -46,7 +46,7 @@
  */
 (function() {
     "use strict";
-    const rimgoInstance = "ri.zzls.xyz"; //defines the Rimgo instance to be used.
+    const rimgoInstance = "rimgo.projectsegfau.lt"; //defines the Rimgo instance to be used.
     const gramInstance = "bibliogram.org"; //defines the Bibliogram instance to be used.
     const tedditInstance = "teddit.net"; //defines the Teddit/Libreddit instance to be used.
     const nitterInstance = "nitter.net"; //defines the Nitter instance to be used.
@@ -144,7 +144,9 @@
             if (window.location.hostname === "tumblr.com" || window.location.hostname === "www.tumblr.com") {
                 window.location.replace("https://" + numblrInstance + window.location.pathname.replace("/login_required","").replace("/explore/trending","/"));
             } else if (window.location.hostname.endsWith('.tumblr.com')) {
-                window.location.replace("https://" + numblrInstance + "/" + window.location.hostname.replace(".tumblr.com","") + window.location.pathname);
+                const tumblrUser = window.location.hostname.replace(".tumblr.com","");
+                if (!tumblrUser.endsWith(".media"))
+                    window.location.replace("https://" + numblrInstance + "/" + tumblrUser + window.location.pathname);
             }
             else if (window.location.hostname === "wikipedia.org" || window.location.hostname.endsWith('.wikipedia.org')) {
                 if (window.location.hostname !== "wikipedia.org" && window.location.hostname !== "www.wikipedia.org")
