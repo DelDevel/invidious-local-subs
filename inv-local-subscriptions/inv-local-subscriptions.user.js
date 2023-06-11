@@ -12,7 +12,7 @@
 // @match       *://youtube.076.ne.jp/*
 // @match       *://inv.*.*/*
 // @match       *://invidious.*/*
-// @version     2023.02
+// @version     2023.06
 // @description Implements local subscriptions on Invidious.
 // @run-at      document-end
 // @grant       GM.getValue
@@ -37,7 +37,7 @@
 (async function() {
     "use strict";
     let subscriptions = await GM.getValue("subscriptions") || [];
-    let settings = await GM.getValue("settings") || {redirect: false, odysee: false, usepiped: false, pipedinstance: "https://pipedapi-libre.kavin.rocks"};
+    let settings = await GM.getValue("settings") || {redirect: false, odysee: false, usepiped: true, pipedinstance: "https://pipedapi-libre.kavin.rocks"};
 
     if (settings.redirect && location.pathname === "/")
         location.replace(location.protocol + "//" + location.hostname + "/search?q=" + makeid((Math.floor(Math.random() * 16) + 16)) + "#invlocal");
@@ -53,6 +53,7 @@
         filters.parentElement.replaceChild(navbar, filters);
         document.getElementById("contents").querySelector('div[class="pure-g"]').innerHTML = '\<center id="invlocal-loading" style="letter-spacing: 0 !important;">Fetching subscriptions...</center>';
         document.getElementById("contents").querySelectorAll('div > a[href*="&page="]').forEach(el => el.parentElement.remove());
+        document.getElementById("contents").querySelectorAll("div.no-results-error").forEach(el => { el.remove(); document.getElementById("contents").querySelector("footer > div.pure-g").parentElement.replaceWith(document.getElementById("contents").querySelector("footer > div.pure-g")); });
         document.getElementById("contents").getElementsByTagName("hr")[0].remove();
         document.getElementById("searchbox").value = "";
         document.title = "Local Subscription Feed - Invidious";
@@ -296,6 +297,16 @@
             return tvalue + ' ' + human + " ago";
     }
 
+    function durationString(scs) {
+        const durDate = new Date(0);
+        durDate.setSeconds(scs);
+        const durHour = Math.floor(durDate.getTime() / 1000 / 60 / 60);
+        const durMin = durDate.getUTCMinutes();
+        const durSec = durDate.getUTCSeconds();
+
+        return (durHour > 0 ? durHour + ':' : '') + (durHour === 0 || durMin > 9 ? durMin : '0' + durMin) + ':' + (durSec > 9 ? durSec : '0' + durSec);
+    }
+
     async function displaySubscriptionFeed(feed,start = 0) {
         const container = document.getElementById("contents").querySelector('div[class="pure-g"]');
 
@@ -317,9 +328,7 @@
         for (let x = start; x <= finish; x++)
         {
             vidIds.push(feed[x].videoId);
-            const date = new Date(0);
-            date.setSeconds(feed[x].lengthSeconds);
-            container.innerHTML = container.innerHTML + '\<div class="pure-u-1 pure-u-md-1-4"><div class="h-box"><a style="width:100%" href="/watch?v=' + feed[x].videoId + '"><div class="thumbnail"><img tabindex="-1" class="thumbnail" src="/vi/' + feed[x].videoId + '/mqdefault.jpg"/> <p class="length">' + date.toISOString().substring(11, 19).split("00:").pop() + '\</p></div><p dir="auto">' + feed[x].title + '\</p></a><div class="video-card-row flexible"><div class="flex-left"><a href="/channel/' + feed[x].authorId + '"><p class="channel-name" dir="auto">' + feed[x].author + '\</p> </a></div> <div class="flex-right"><div class="icon-buttons"><a title="Watch on YouTube" href="https://www.youtube.com/watch?v=' + feed[x].videoId + '"><i class="icon ion-logo-youtube"></i></a> <a class="invlocal-odysee" style="visibility: hidden !important;" title="Watch on Odysee" href="' + feed[x].videoId + '"><i class="icon ion-md-rocket"></i></a> <a title="Discuss on Reddit" href="https://www.reddit.com/search?q=url%3A%22' + feed[x].videoId + '%22+AND+%28site%3Ayoutube.com+OR+site%3Ayoutu.be+OR+site%3Ayoutube-nocookie.com%29&amp;restrict_sr=&amp;sort=top&amp;t=all"><i class="icon ion-logo-reddit"></i></a> <a title="Audio mode" href="/watch?v=' + feed[x].videoId + '&amp;listen=1"><i class="icon ion-md-headset"></i></a> <a title="Switch Invidious Instance" href="https://redirect.invidious.io/watch?v=' + feed[x].videoId + '"><i class="icon ion-md-jet"></i></a></div></div></div> <div class="video-card-row flexible"><div class="flex-left"><p class="video-data" dir="auto">Shared ' + msToHumanTime(Date.now() - (feed[x].published * 1000)) + '\</p></div><div class="flex-right"><p class="video-data" dir="auto">' + roundViews(feed[x].viewCount) + '\</p></div></div></div></div>'
+            container.innerHTML += '\<div class="pure-u-1 pure-u-md-1-4"><div class="h-box"><a style="width:100%" href="/watch?v=' + feed[x].videoId + '"><div class="thumbnail"><img tabindex="-1" class="thumbnail" src="/vi/' + feed[x].videoId + '/mqdefault.jpg"/> <p class="length">' + durationString(feed[x].lengthSeconds) + '\</p></div><p dir="auto">' + feed[x].title + '\</p></a><div class="video-card-row flexible"><div class="flex-left"><a href="/channel/' + feed[x].authorId + '"><p class="channel-name" dir="auto">' + feed[x].author + '\</p> </a></div> <div class="flex-right"><div class="icon-buttons"><a title="Watch on YouTube" href="https://www.youtube.com/watch?v=' + feed[x].videoId + '"><i class="icon ion-logo-youtube"></i></a> <a class="invlocal-odysee" style="visibility: hidden !important;" title="Watch on Odysee" href="' + feed[x].videoId + '"><i class="icon ion-md-rocket"></i></a> <a title="Discuss on Reddit" href="https://www.reddit.com/search?q=url%3A%22' + feed[x].videoId + '%22+AND+%28site%3Ayoutube.com+OR+site%3Ayoutu.be+OR+site%3Ayoutube-nocookie.com%29&amp;restrict_sr=&amp;sort=top&amp;t=all"><i class="icon ion-logo-reddit"></i></a> <a title="Audio mode" href="/watch?v=' + feed[x].videoId + '&amp;listen=1"><i class="icon ion-md-headset"></i></a> <a title="Switch Invidious Instance" href="https://redirect.invidious.io/watch?v=' + feed[x].videoId + '"><i class="icon ion-md-jet"></i></a></div></div></div> <div class="video-card-row flexible"><div class="flex-left"><p class="video-data" dir="auto">Shared ' + msToHumanTime(Date.now() - (feed[x].published * 1000)) + '\</p></div><div class="flex-right"><p class="video-data" dir="auto">' + roundViews(feed[x].viewCount) + '\</p></div></div></div></div>'
         }
         let odyUrls = {};
         if (!!settings.odysee && settings.odysee) {
