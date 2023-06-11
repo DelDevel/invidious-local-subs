@@ -13,7 +13,7 @@
 // @exclude     *://*/embed/*
 // @exclude     *://*/watch?v=*
 // @inject-into content
-// @version     2023.05
+// @version     2023.06
 // @grant       none
 // @allFrames   true
 // ==/UserScript==
@@ -69,9 +69,7 @@
                 invid = 'https://' + instance + '/embed/' + invid.substring(invid.toLowerCase().indexOf('/v/') + 3).split('/')[0].split(';')[0];
             }
             else
-            {
-                invid = 'https://' + instance + '/embed/' + invid.split('/')[3].split(';')[0];
-            }
+                invid = 'https://' + instance + '/' + invid.split('/')[3].split(';')[0];
 
             if (auto !== -1) {
                 params.set('autoplay', auto);
