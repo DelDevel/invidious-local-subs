@@ -12,28 +12,26 @@
 // @match       *://yt.artemislena.eu/*
 // @match       *://tube.cadence.moe/*
 // @match       *://y.com.sb/*
-// @match       *://invidious.dhusch.de/*
 // @match       *://invidious.esmailelbob.xyz/*
 // @match       *://invidious.flokinet.to/*
+// @match       *://inv.frail.com.br/*
 // @match       *://invidious.garudalinux.org/*
 // @match       *://invidious.kavin.rocks/*
 // @match       *://invidious.namazso.eu/*
 // @match       *://invidious.nerdvpn.de/*
-// @match       *://inv.odyssey346.dev/*
+// @match       *://youtube.owacon.moe/*
+// @match       *://inv.pistasjis.net/*
 // @match       *://invidious.projectsegfau.lt/*
 // @match       *://inv.bp.projectsegfau.lt/*
+// @match       *://inv.in.projectsegfau.lt/*
+// @match       *://inv.us.projectsegfau.lt/*
 // @match       *://vid.puffyan.us/*
-// @match       *://invidious.rhyshl.live/*
-// @match       *://inv.riverside.rocks/*
 // @match       *://invidious.sethforprivacy.com/*
 // @match       *://invidious.slipfox.xyz/*
 // @match       *://invidious.snopyta.org/*
-// @match       *://invidious.tiekoetter.com/*
 // @match       *://inv.vern.cc/*
 // @match       *://invidious.weblibre.org/*
-// @match       *://invidio.xamh.de/*
 // @match       *://yewtu.be/*
-// @match       *://youtube.076.ne.jp/*
 // @grant       GM.getValue
 // @grant       GM.setValue
 // @grant       GM.notification
@@ -45,7 +43,7 @@
 // @connect     *
 // @require     https://greasemonkey.github.io/gm4-polyfill/gm4-polyfill.js
 // @run-at      document-start
-// @version     2023.01
+// @version     2023.06
 // @license     AGPL-3.0-or-later
 // @description Skips annoying intros, sponsors and w/e on YouTube and its frontends like Invidious and CloudTube using the SponsorBlock API.
 // ==/UserScript==
@@ -65,6 +63,13 @@
  */
  (async function() {
     "use strict";
+
+    if (typeof GM.registerMenuCommand == 'undefined') //safari
+        this.GM.registerMenuCommand = () => console.log((new Date()).toTimeString().split(' ')[0] + " - Simple Sponsor Skipper: Menu comments are not currently supported by your Script Manager.");
+
+    if (typeof GM.notification == 'undefined') //safari
+        this.GM.notification = () => console.log((new Date()).toTimeString().split(' ')[0] + " - Simple Sponsor Skipper: Notifications are not currently supported by your Script Manager.");
+
     async function go(videoId) {
         console.log("New video ID: " + videoId);
 
@@ -118,11 +123,7 @@
             });
         })();
         try {
-            let response;
-            if (s3settings.disable_hashing)
-                response = JSON.parse("[{\"videoID\":\"" + videoId + "\",\"segments\":" + resp.responseText + "}]");
-            else
-                response = JSON.parse(resp.responseText);
+            const response = s3settings.disable_hashing ? JSON.parse("[{\"videoID\":\"" + videoId + "\",\"segments\":" + resp.responseText + "}]") : JSON.parse(resp.responseText);
 
             for (let x = 0; x < response.length; x++)
             {
@@ -141,22 +142,14 @@
         } catch (e) { result = []; }
         let x = 0;
         let prevTime = -1;
-        let favicon = document.querySelector('link[rel=icon]');
-        if (favicon && favicon.hasAttribute('href')){
-            favicon = favicon.href;
-        } else {
-            favicon = null;
-        }
+        const favicon = document.head.querySelector('link[rel=icon][href]')?.href;
+
         if (result.length > 0) {
             let player = await (function() {
                 return new Promise(resolve => {
                     let pltimer = window.setInterval(function() {
-                        let plr = document.querySelector('[id="movie_player"] video') || document.getElementById("player_html5_api") || document.getElementById("player") || document.getElementById("video") || document.getElementById("vjs_video_3_html5_api");
-                        if (!!plr && !!plr.video && plr.video.readyState >= 3) {
-                            window.clearInterval(pltimer);
-                            resolve(plr.video);
-                        }
-                        else if (!!plr && plr.readyState >= 3) {
+                        let plr = document.body.querySelector("#movie_player video, video#player_html5_api, video#player, video#video, video#vjs_video_3_html5_api"); // YT, Invidious, Invidious NoJS, CloudTube, Odysee
+                        if (!!plr && plr.readyState >= 3) {
                             window.clearInterval(pltimer);
                             resolve(plr);
                         }
@@ -175,6 +168,12 @@
                 } else {
                     ntxt = "Received " + rBefore + " segments, " + result.length + " after processed.";
                 }
+                let newDuration = result[0].videoDuration;
+                for (let x = 0; x < result.length; x++)
+                {
+                    newDuration -= result[x].segment[1] - result[x].segment[0];
+                }
+                ntxt += "\nDuration: " + durationString(newDuration);
                 let noti = {
                     title: "Skippable segments found!",
                     text: ntxt + "\n\u00AD\n" + document.title + " (Video ID: " + videoId + ")",
@@ -184,20 +183,16 @@
                 };
                 if (!!rPoi)
                 {
-                    const date = new Date(0);
-                    date.setSeconds(Math.floor(rPoi));
-                    noti.text = noti.text.replace("\n\u00AD\n", "\n\u00AD\nThis video has a highlight segment at " + date.toISOString().substring(11, 19).split("00:").pop() + ".\nClick here to skip to it.\n\u00AD\n");
+                    noti.text = noti.text.replace("\n\u00AD\n", "\n\u00AD\nThis video has a highlight segment at " + durationString(rPoi) + ".\nClick here to skip to it.\n\u00AD\n");
                     noti.onclick = function(){ player.currentTime = rPoi; };
                 }
                 GM.notification(noti);
             }
             const pfunc = function(){
                 if (s3settings.notifications && !!rPoi && player.currentTime < rPoi) {
-                    const date = new Date(0);
-                    date.setSeconds(Math.floor(rPoi));
                     GM.notification({
                         title: "Point of interest found!",
-                        text: "This video has a highlight segment at " + date.toISOString().substring(11, 19).split("00:").pop() + ".\nClick here to skip to it.\n\u00AD\n" + document.title + " (Video ID: " + videoId + ")",
+                        text: "This video has a highlight segment at " + durationString(rPoi) + ".\nClick here to skip to it.\n\u00AD\n" + document.title + " (Video ID: " + videoId + ")",
                         onclick: function(){ player.currentTime = rPoi; },
                         silent: true,
                         timeout: 5000,
@@ -243,6 +238,16 @@
             player.addEventListener('timeupdate', vfunc);
             player.addEventListener('play', pfunc);
         }
+    }
+
+    function durationString(scs) {
+        const durDate = new Date(0);
+        durDate.setSeconds(scs);
+        const durHour = Math.floor(durDate.getTime() / 1000 / 60 / 60);
+        const durMin = durDate.getUTCMinutes();
+        const durSec = durDate.getUTCSeconds();
+
+        return (durHour > 0 ? durHour + ':' : '') + (durHour === 0 || durMin > 9 ? durMin : '0' + durMin) + ':' + (durSec > 9 ? durSec : '0' + durSec);
     }
 
     function processSegments(segments) {
@@ -374,6 +379,7 @@
                 else { document.body.classList.remove('dark-theme'); }
             });
             document.getElementById('darkmode').dispatchEvent(new Event('change'));
+
             const btnSave = document.getElementById('btnsave');
             btnSave.addEventListener("click", async function() {
                 s3settings.categories = 0;
