@@ -142,7 +142,7 @@
         } catch (e) { result = []; }
         let x = 0;
         let prevTime = -1;
-        const favicon = document.head.querySelector('link[rel=icon][href]')?.href;
+        const favicon = !!document.head.querySelector('link[rel=icon][href]') ? document.head.querySelector('link[rel=icon][href]').href : undefined; // document.head.querySelector('link[rel=icon][href]')?.href; <-- Syntax error on Pale Moon with Greasemonkey 3
 
         if (result.length > 0) {
             let player = await (function() {
