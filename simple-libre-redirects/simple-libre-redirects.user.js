@@ -2,7 +2,7 @@
 // @name        Simple Libre Redirects
 // @description	Redirects you from big tech websites to their Free-as-in-freedom implementations.
 // @author      SkauOfArcadia
-// @version     2023.06
+// @version     2023.07
 // @homepage    https://codeberg.org/mthsk/userscripts/src/branch/master/simple-libre-redirects
 // @contactURL  https://t.me/SkauOfArcadia
 // @updateURL       https://codeberg.org/mthsk/userscripts/raw/branch/master/simple-libre-redirects/simple-libre-redirects.user.js
@@ -11,7 +11,7 @@
 // @match       *://imgur.com/*
 // @match       *://i.imgur.com/*
 // @match       *://imgur.io/*
-// @match       *://www.instagram.com/*
+// @exclude     *://www.instagram.com/*
 // @match       *://*.medium.com/*
 // @match       *://*.reddit.com/*
 // @match       *://*.tiktok.com/*
@@ -46,16 +46,16 @@
  */
 (function() {
     "use strict";
-    const rimgoInstance = "rimgo.projectsegfau.lt"; //defines the Rimgo instance to be used.
-    const gramInstance = "bibliogram.org"; //defines the Bibliogram instance to be used.
-    const tedditInstance = "teddit.net"; //defines the Teddit/Libreddit instance to be used.
-    const nitterInstance = "nitter.net"; //defines the Nitter instance to be used.
-    const invidInstance = "yewtu.be"; //defines the Invidious/Piped instance to be used.
-    const bbInstance = "beatbump.ml"; //defines the Beatbump instance to be used.
-    const numblrInstance = "numblr.net"; //defines the Numblr instance to be used.
-    const tokInstance = "proxitok.pabloferreiro.es"; //defines the proxiTok instance to be used.
-    const wikiInstance = "wikiless.org"; //defines the Wikiless instance to be used.
-    const scribeInstance = "scribe.rip"; //defines the Scribe instance to be used.
+    const rimgoInstance = "https://farside.link/rimgo"; //defines the Rimgo instance to be used.
+    const gramInstance = "https://bibliogram.org"; //defines the Bibliogram instance to be used.
+    const tedditInstance = "https://teddit.net"; //defines the Teddit/Libreddit instance to be used.
+    const nitterInstance = "https://nitter.privacydev.net"; //defines the Nitter instance to be used.
+    const invidInstance = "https://yewtu.be"; //defines the Invidious/Piped instance to be used.
+    const bbInstance = "https://beatbump.ml"; //defines the Beatbump instance to be used.
+    const numblrInstance = "https://numblr.net"; //defines the Numblr instance to be used.
+    const tokInstance = "https://proxitok.pabloferreiro.es"; //defines the proxiTok instance to be used.
+    const wikiInstance = "https://wikiless.org"; //defines the Wikiless instance to be used.
+    const scribeInstance = "https://scribe.rip"; //defines the Scribe instance to be used.
     const invidDash = false; //defines if the quality=dash parameter will be used for invidious
     const invidNoJS = false; //defines if the nojs=1 parameter will be used for invidious
     let params = new URLSearchParams(window.location.search);
@@ -71,13 +71,13 @@
             } else if (imgpath.toLowerCase().match(/\.(jpeg|jpg|gif|png|bmp)$/)) {
                 params.set('no_webp', 1);
             }
-            window.location.replace("https://" + rimgoInstance + imgpath + '?' + params + window.location.hash);
+            window.location.replace(rimgoInstance + imgpath + '?' + params + window.location.hash);
             break;
         case "www.instagram.com":
             if (window.location.pathname === '/' || window.location.pathname.indexOf('/p/') === 0 || window.location.pathname.indexOf('/tv/') === 0 || window.location.pathname.indexOf('/reel/') === 0) {
-                window.location.replace("https://" + gramInstance + window.location.pathname.replace('/tv/', '/p/') + window.location.search + window.location.hash);
+                window.location.replace(gramInstance + window.location.pathname.replace('/tv/', '/p/') + window.location.search + window.location.hash);
             } else {
-                window.location.replace("https://" + gramInstance + "/u" + window.location.pathname + window.location.search + window.location.hash);
+                window.location.replace(gramInstance + "/u" + window.location.pathname + window.location.search + window.location.hash);
             }
             break;
         case "reddit.com":
@@ -88,21 +88,24 @@
         case "old.reddit.com":
         case "www.reddit.com":
             if ((window.location.pathname.indexOf('over18') !== -1 || window.location.pathname.indexOf('login') !== -1) && params.has('dest')) {
-                window.location.replace("https://" + tedditInstance + "/" + decodeURIComponent(params.get('dest')).split('reddit.com/').pop());
+                window.location.replace(tedditInstance + "/" + decodeURIComponent(params.get('dest')).split('reddit.com/').pop());
             } else {
-                window.location.replace("https://" + tedditInstance + window.location.pathname + window.location.search + window.location.hash);
+                window.location.replace(tedditInstance + window.location.pathname + window.location.search + window.location.hash);
             }
             break;
         case "cinapse.co":
-            window.location.replace("https://" + scribeInstance + window.location.pathname + window.location.search + window.location.hash);
+            window.location.replace(scribeInstance + window.location.pathname + window.location.search + window.location.hash);
             break;
         case "tiktok.com":
         case "www.tiktok.com":
-            window.location.replace("https://" + tokInstance + window.location.pathname);
+            window.location.replace(tokInstance + window.location.pathname);
             break;
         case "mobile.twitter.com":
         case "twitter.com":
-            window.location.replace("https://" + nitterInstance + window.location.pathname + window.location.search + window.location.hash);
+            if (params.has('redirect_after_login'))
+                window.location.replace(nitterInstance + decodeURIComponent(params.get('redirect_after_login')));
+            else
+                window.location.replace(nitterInstance + window.location.pathname + window.location.search + window.location.hash);
             break;
         case "youtu.be":
         case "m.youtube.com":
@@ -123,43 +126,43 @@
                             params.set('v', document.body.querySelector('[video-id]').getAttribute('video-id'));
                             params.set('start', bar.getAttribute('aria-valuemin'));
                             params.set('end', bar.getAttribute('aria-valuemax'));
-                            window.location.replace("https://" + invidInstance + "/watch?" + params + window.location.hash);
+                            window.location.replace(invidInstance + "/watch?" + params + window.location.hash);
                             clearInterval(check);
                         }
                     }, 100);
                 });
             }
             else if (window.location.pathname.indexOf('/shorts/') === 0) {
-                window.location.replace("https://" + invidInstance + window.location.pathname.replace('/shorts/', '/watch?v=') + '&' + params + window.location.hash);
+                window.location.replace(invidInstance + window.location.pathname.replace('/shorts/', '/watch?v=') + '&' + params + window.location.hash);
             } else {
-                window.location.replace("https://" + invidInstance + window.location.pathname + '?' + params + window.location.hash);
+                window.location.replace(invidInstance + window.location.pathname + '?' + params + window.location.hash);
             }
             break;
       case "music.youtube.com":
             params.set('id', params.get('v'));
             params.delete('v');
-            window.location.replace("https://" + bbInstance + window.location.pathname.replace('/watch', '/listen') + '?' + params + window.location.hash);
+            window.location.replace(bbInstance + window.location.pathname.replace('/watch', '/listen') + '?' + params + window.location.hash);
             break;
       default:
             if (window.location.hostname === "tumblr.com" || window.location.hostname === "www.tumblr.com") {
-                window.location.replace("https://" + numblrInstance + window.location.pathname.replace("/login_required","").replace("/explore/trending","/"));
+                window.location.replace(numblrInstance + window.location.pathname.replace("/login_required","").replace("/explore/trending","/"));
             } else if (window.location.hostname.endsWith('.tumblr.com')) {
                 const tumblrUser = window.location.hostname.replace(".tumblr.com","");
                 if (!tumblrUser.endsWith(".media"))
-                    window.location.replace("https://" + numblrInstance + "/" + tumblrUser + window.location.pathname);
+                    window.location.replace(numblrInstance + "/" + tumblrUser + window.location.pathname);
             }
             else if (window.location.hostname === "wikipedia.org" || window.location.hostname.endsWith('.wikipedia.org')) {
                 if (window.location.hostname !== "wikipedia.org" && window.location.hostname !== "www.wikipedia.org")
                     params.set('lang', window.location.hostname.split('.')[0]);
                 params.set('useskin', 'vector');
-                window.location.replace("https://" + wikiInstance + window.location.pathname + '?' + params);
+                window.location.replace(wikiInstance + window.location.pathname + '?' + params);
             }
-            else if ((window.location.hostname === wikiInstance || window.location.hostname.endsWith('.' + wikiInstance)) && !params.has('useskin')) {
+            else if (wikiInstance.endsWith(window.location.hostname) && !params.has('useskin')) {
                 params.set('useskin', 'vector');
-                window.location.replace("https://" + wikiInstance + window.location.pathname + '?' + params);
+                window.location.replace(wikiInstance + window.location.pathname + '?' + params);
             }
             else if (window.location.hostname === "medium.com" || window.location.hostname.endsWith('.medium.com')) {
-                window.location.replace("https://" + scribeInstance + window.location.pathname + window.location.search + window.location.hash);
+                window.location.replace(scribeInstance + window.location.pathname + window.location.search + window.location.hash);
             }
             break;
     }
