@@ -25,12 +25,6 @@ Replaces all YouTube embeds with Invidious ([yewtu.be](https://yewtu.be/)) embed
 
 #### Installation: [Click here](https://codeberg.org/mthsk/userscripts/raw/branch/master/invidious-embed/invidious-embed.user.js), or get it on [GreasyFork](https://greasyfork.org/scripts/438131-invidious-yewtu-be-embed).
 
-### ProtonDB: Show PC reports on top
-
-Ever since the release of the Steam Deck, Deck reports are displayed on top of PC reports on ProtonDB. Since I do not have a Steam Deck, I wrote this script to have PC reports on top again.
-
-#### Installation: [Click here](https://codeberg.org/mthsk/userscripts/raw/branch/master/protondb-pc-reports/protondb-pc-reports.user.js)
-
 ### Rimgo Embed
 
 Replaces all imgur image embeds with Rimgo ([i.bcow.xyz](https://i.bcow.xyz/)) embeds wherever you go.
