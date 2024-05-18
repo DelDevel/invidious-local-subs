@@ -2,7 +2,7 @@
 // @name        Simple Libre Redirects
 // @description	Redirects you from big tech websites to their Free-as-in-freedom implementations.
 // @author      SkauOfArcadia
-// @version     2023.07
+// @version     2024.05
 // @homepage    https://codeberg.org/mthsk/userscripts/src/branch/master/simple-libre-redirects
 // @contactURL  https://t.me/SkauOfArcadia
 // @updateURL       https://codeberg.org/mthsk/userscripts/raw/branch/master/simple-libre-redirects/simple-libre-redirects.user.js
@@ -49,7 +49,7 @@
     const rimgoInstance = "https://farside.link/rimgo"; //defines the Rimgo instance to be used.
     const gramInstance = "https://bibliogram.org"; //defines the Bibliogram instance to be used.
     const tedditInstance = "https://teddit.net"; //defines the Teddit/Libreddit instance to be used.
-    const nitterInstance = "https://nitter.privacydev.net"; //defines the Nitter instance to be used.
+    const nitterInstance = "https://nitter.poast.org"; //defines the Nitter instance to be used.
     const invidInstance = "https://yewtu.be"; //defines the Invidious/Piped instance to be used.
     const bbInstance = "https://beatbump.ml"; //defines the Beatbump instance to be used.
     const numblrInstance = "https://numblr.net"; //defines the Numblr instance to be used.
@@ -102,7 +102,11 @@
             break;
         case "mobile.twitter.com":
         case "twitter.com":
-            if (params.has('redirect_after_login'))
+            if (params.has('tok')) {
+                const xjson = atob(decodeURIComponent(params.get('tok')));
+                window.location.replace(nitterInstance + JSON.parse(xjson.substring(0, xjson.lastIndexOf("\x7D") + 1)).e);
+            }
+            else if (params.has('redirect_after_login'))
                 window.location.replace(nitterInstance + decodeURIComponent(params.get('redirect_after_login')));
             else
                 window.location.replace(nitterInstance + window.location.pathname + window.location.search + window.location.hash);
