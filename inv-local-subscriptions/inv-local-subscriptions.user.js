@@ -9,22 +9,23 @@
 // @match       *://watch.thekitty.zone/*
 // @match       *://y.com.sb/*
 // @match       *://yewtu.be/*
+// @match       *://youchu.be/*
 // @match       *://youtube.076.ne.jp/*
 // @match       *://inv.*.*/*
 // @match       *://invidious.*/*
-// @version     2023.06
+// @version     2024.06
 // @description Implements local subscriptions on Invidious.
 // @run-at      document-end
 // @grant       GM.getValue
 // @grant       GM.setValue
 // @grant       GM.xmlHttpRequest
-// @license     AGPL-3.0-or-later
+// @license     AGPL-3.0
 // ==/UserScript==
 /**
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
+ * License.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -51,9 +52,10 @@
         navbar.innerHTML = '<a href="/feed/popular" class="feed-menu-item pure-menu-heading">Popular</a><a href="/feed/trending" class="feed-menu-item pure-menu-heading">Trending</a><a id="invlocal-refresh" href="javascript:void(0);" class="feed-menu-item pure-menu-heading">Refresh Subscriptions</a>';
         const filters = document.getElementById("filters");
         filters.parentElement.replaceChild(navbar, filters);
-        document.getElementById("contents").querySelector('div[class="pure-g"]').innerHTML = '\<center id="invlocal-loading" style="letter-spacing: 0 !important;">Fetching subscriptions...</center>';
-        document.getElementById("contents").querySelectorAll('div > a[href*="&page="]').forEach(el => el.parentElement.remove());
-        document.getElementById("contents").querySelectorAll("div.no-results-error").forEach(el => { el.remove(); document.getElementById("contents").querySelector("footer > div.pure-g").parentElement.replaceWith(document.getElementById("contents").querySelector("footer > div.pure-g")); });
+        document.body.querySelector('#contents div[class="pure-g"]').innerHTML = '\<center id="invlocal-loading" style="letter-spacing: 0 !important;">Fetching subscriptions...</center>';
+        document.body.querySelectorAll('#contents div > a[href*="&page="]').forEach(el => el.parentElement.remove());
+        document.body.querySelectorAll("#contents div.no-results-error").forEach(el => { el.remove(); document.body.querySelector("#contents footer > div.pure-g").parentElement.replaceWith(document.body.querySelector("#contents footer > div.pure-g")); });
+        document.body.querySelectorAll('a[href$="?referer=' + encodeURIComponent(location.pathname + location.search) + '"]').forEach(el => el.href = el.href + location.hash);
         document.getElementById("contents").getElementsByTagName("hr")[0].remove();
         document.getElementById("searchbox").value = "";
         document.title = "Local Subscription Feed - Invidious";
@@ -74,7 +76,7 @@
             if (!e.target.hasAttribute('disabled'))
             {
                 e.target.setAttribute('disabled', '');
-                document.getElementById("contents").querySelector('div[class="pure-g"]').innerHTML = '\<center id="invlocal-loading" style="letter-spacing: 0 !important;">Fetching subscriptions...</center>';
+                document.body.querySelector('#contents div[class="pure-g"]').innerHTML = '\<center id="invlocal-loading" style="letter-spacing: 0 !important;">Fetching subscriptions...</center>';
 
                 if (settings.hasOwnProperty("usepiped") && settings.usepiped)
                     feed = await getPipedSubscriptionFeed(settings.pipedinstance);
@@ -108,7 +110,7 @@
         }
         else
         {
-            chid = document.getElementById("published-date").parentElement.querySelector('a[href^="/channel/"]').getAttribute("href").split('/')[2];
+            chid = document.body.querySelector('a[href] .channel-profile').parentElement.getAttribute("href").split('/')[2];
             chname = document.getElementById("channel-name").textContent.trim();
         }
 
@@ -143,7 +145,7 @@
 
         if (location.pathname.toLowerCase() === "/watch")
         {
-            window.setInterval(getSubscriptionFeed(false, true), 300000);
+            if (!settings.usepiped) window.setInterval(getSubscriptionFeed(false, true), 300000);
         }
     }
     else if (location.pathname.toLowerCase() === "/preferences")
@@ -215,14 +217,12 @@
     }
 
     function makeid(length) {
-        let result = '';
-        const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
-        const charactersLength = characters.length;
-        let counter = 0;
-        while (counter < length) {
-          result += characters.charAt(Math.floor(Math.random() * charactersLength));
-          counter += 1;
-        }
+        let result = "";
+        const characters = "abcdefghijklmnopqrstuvwxyz0123456789";
+
+        for (let x = 0; x < length; x++)
+            result += characters.charAt(Math.floor(Math.random() * characters.length));
+
         return result;
     }
 
@@ -328,8 +328,28 @@
         for (let x = start; x <= finish; x++)
         {
             vidIds.push(feed[x].videoId);
-            container.innerHTML += '\<div class="pure-u-1 pure-u-md-1-4"><div class="h-box"><a style="width:100%" href="/watch?v=' + feed[x].videoId + '"><div class="thumbnail"><img tabindex="-1" class="thumbnail" src="/vi/' + feed[x].videoId + '/mqdefault.jpg"/> <p class="length">' + durationString(feed[x].lengthSeconds) + '\</p></div><p dir="auto">' + feed[x].title + '\</p></a><div class="video-card-row flexible"><div class="flex-left"><a href="/channel/' + feed[x].authorId + '"><p class="channel-name" dir="auto">' + feed[x].author + '\</p> </a></div> <div class="flex-right"><div class="icon-buttons"><a title="Watch on YouTube" href="https://www.youtube.com/watch?v=' + feed[x].videoId + '"><i class="icon ion-logo-youtube"></i></a> <a class="invlocal-odysee" style="visibility: hidden !important;" title="Watch on Odysee" href="' + feed[x].videoId + '"><i class="icon ion-md-rocket"></i></a> <a title="Discuss on Reddit" href="https://www.reddit.com/search?q=url%3A%22' + feed[x].videoId + '%22+AND+%28site%3Ayoutube.com+OR+site%3Ayoutu.be+OR+site%3Ayoutube-nocookie.com%29&amp;restrict_sr=&amp;sort=top&amp;t=all"><i class="icon ion-logo-reddit"></i></a> <a title="Audio mode" href="/watch?v=' + feed[x].videoId + '&amp;listen=1"><i class="icon ion-md-headset"></i></a> <a title="Switch Invidious Instance" href="https://redirect.invidious.io/watch?v=' + feed[x].videoId + '"><i class="icon ion-md-jet"></i></a></div></div></div> <div class="video-card-row flexible"><div class="flex-left"><p class="video-data" dir="auto">Shared ' + msToHumanTime(Date.now() - (feed[x].published * 1000)) + '\</p></div><div class="flex-right"><p class="video-data" dir="auto">' + roundViews(feed[x].viewCount) + '\</p></div></div></div></div>'
+            container.innerHTML += '\<div class="pure-u-1 pure-u-md-1-4"><div class="h-box"><a style="width:100%" href="/watch?v=' + feed[x].videoId + '"><div class="thumbnail"><img tabindex="-1" class="thumbnail" src="/vi/' + feed[x].videoId + '/mqdefault.jpg"/> <div class="bottom-right-overlay"><p class="length">' + durationString(feed[x].lengthSeconds) + '\</p></div></div><p dir="auto">' + feed[x].title + '\</p></a><div class="video-card-row flexible"><div class="flex-left"><a href="/channel/' + feed[x].authorId + '"><p class="channel-name" dir="auto">' + feed[x].author + '\</p> </a></div> <div class="flex-right"><div class="icon-buttons"><a title="Watch on YouTube" href="https://www.youtube.com/watch?v=' + feed[x].videoId + '"><i class="icon ion-logo-youtube"></i></a> <a class="invlocal-odysee" style="visibility: hidden !important;" title="Watch on Odysee" href="' + feed[x].videoId + '"><i class="icon ion-md-rocket"></i></a> <a title="Discuss on Reddit" href="https://www.reddit.com/search?q=url%3A%22' + feed[x].videoId + '%22+AND+%28site%3Ayoutube.com+OR+site%3Ayoutu.be+OR+site%3Ayoutube-nocookie.com%29&amp;restrict_sr=&amp;sort=top&amp;t=all"><i class="icon ion-logo-reddit"></i></a> <a title="Audio mode" href="/watch?v=' + feed[x].videoId + '&amp;listen=1"><i class="icon ion-md-headset"></i></a> <a title="Switch Invidious Instance" href="https://redirect.invidious.io/watch?v=' + feed[x].videoId + '"><i class="icon ion-md-jet"></i></a></div></div></div> <div class="video-card-row flexible"><div class="flex-left"><p class="video-data" dir="auto">Shared ' + msToHumanTime(Date.now() - (feed[x].published * 1000)) + '\</p></div><div class="flex-right"><p class="video-data" dir="auto">' + roundViews(feed[x].viewCount) + '\</p></div></div></div></div>';
         }
+        /*container.querySelectorAll('a[href^="https://www.reddit.com/search?q=url%3A%22"]').forEach((el) => {
+            const vId = el.href.split("%22")[1];
+            el.href = "javascript:void(0);";
+            el.addEventListener("mouseover", async (ev) => {
+                if (ev.target.parentElement.href === "javascript:void(0);") {
+                    const vEl = ev.target.parentElement.parentElement.parentElement.parentElement.parentElement;
+                    const reddit = await getJson("https://rss-to-json-serverless-api.vercel.app/api?feedURL=https%3A%2F%2Fwww.reddit.com%2Fsearch.rss%3Fq%3Durl%253A%2522" + vId + "%2522%2BAND%2B%2528site%253Ayoutube.com%2BOR%2Bsite%253Ayoutu.be%2BOR%2Bsite%253Ayoutube-nocookie.com%2529%26restrict_sr%3D%26sort%3Dtop%26t%3Dall", 0);
+                    if (reddit.items.length > 0)
+                    {
+                        ev.target.parentElement.href = reddit.items[0].url;
+                    }
+                    else
+                    {
+                        const vTitle = vEl.querySelector('a[href*="/watch?v="] p[dir="auto"]').textContent;
+                        const vChannel = vEl.getElementsByClassName("channel-name")[0].textContent;
+                        ev.target.parentElement.href = "https://www.reddit.com/r/videos/submit?title=" + encodeURIComponent(vTitle + " — " + vChannel) + "&url=" + encodeURIComponent("https://www.youtube.com/watch?v=" + vId);
+                    }
+                }
+            });
+        });*/
         let odyUrls = {};
         if (!!settings.odysee && settings.odysee) {
             odyUrls = await getJson("https://api.odysee.com/yt/resolve?video_ids=" + encodeURIComponent(vidIds.join(',')), 0);
