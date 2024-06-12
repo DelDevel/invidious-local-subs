@@ -2,7 +2,7 @@
 // @name        Simple Libre Redirects
 // @description	Redirects you from big tech websites to their Free-as-in-freedom implementations.
 // @author      SkauOfArcadia
-// @version     2024.05
+// @version     2024.06
 // @homepage    https://codeberg.org/mthsk/userscripts/src/branch/master/simple-libre-redirects
 // @contactURL  https://t.me/SkauOfArcadia
 // @updateURL       https://codeberg.org/mthsk/userscripts/raw/branch/master/simple-libre-redirects/simple-libre-redirects.user.js
@@ -19,6 +19,7 @@
 // @match       *://twitter.com/*
 // @match       *://mobile.twitter.com/*
 // @match       *://*.wikipedia.org/*
+// @match       *://x.com/*
 // @match       *://www.youtube.com/*
 // @match       *://m.youtube.com/*
 // @match       *://youtu.be/*
@@ -102,8 +103,9 @@
             break;
         case "mobile.twitter.com":
         case "twitter.com":
+        case "x.com":
             if (params.has('tok')) {
-                const xjson = atob(decodeURIComponent(params.get('tok')));
+                const xjson = hex2a(decodeURIComponent(params.get('tok')));
                 window.location.replace(nitterInstance + JSON.parse(xjson.substring(0, xjson.lastIndexOf("\x7D") + 1)).e);
             }
             else if (params.has('redirect_after_login'))
@@ -169,5 +171,13 @@
                 window.location.replace(scribeInstance + window.location.pathname + window.location.search + window.location.hash);
             }
             break;
+    }
+
+    function hex2a(hexx) {
+        var hex = hexx.toString();//force conversion
+        var str = '';
+        for (var i = 0; i < hex.length; i += 2)
+            str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+        return str;
     }
 })();
