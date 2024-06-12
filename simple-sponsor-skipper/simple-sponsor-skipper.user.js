@@ -17,7 +17,9 @@
 // @match       *://inv.frail.com.br/*
 // @match       *://invidious.garudalinux.org/*
 // @match       *://invidious.kavin.rocks/*
+// @match       *://inv.nadeko.net/*
 // @match       *://invidious.namazso.eu/*
+// @match       *://iv.nboeck.de/*
 // @match       *://invidious.nerdvpn.de/*
 // @match       *://youtube.owacon.moe/*
 // @match       *://inv.pistasjis.net/*
@@ -31,6 +33,7 @@
 // @match       *://invidious.snopyta.org/*
 // @match       *://inv.vern.cc/*
 // @match       *://invidious.weblibre.org/*
+// @match       *://youchu.be/*
 // @match       *://yewtu.be/*
 // @grant       GM.getValue
 // @grant       GM.setValue
@@ -43,7 +46,7 @@
 // @connect     *
 // @require     https://greasemonkey.github.io/gm4-polyfill/gm4-polyfill.js
 // @run-at      document-start
-// @version     2024.01
+// @version     2024.06
 // @license     AGPL-3.0-or-later
 // @description Skips annoying intros, sponsors and w/e on YouTube and its frontends like Invidious and CloudTube using the SponsorBlock API.
 // ==/UserScript==
@@ -342,6 +345,7 @@
                 cat.push("poi_highlight");
 
             s3settings.categories = cat;
+            await GM.setValue('s3settings', s3settings);
         }
     } else {
         s3settings = { "categories":["preview","sponsor","outro","music_offtopic","selfpromo","poi_highlight","interaction","intro"], "upvotes":-2, "notifications":true, "disable_hashing":false, "instance":"sponsor.ajay.app", "darkmode":-1 };
