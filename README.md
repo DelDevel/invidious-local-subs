@@ -21,9 +21,9 @@ Implements local subscriptions on Invidious. Should work on any Invidious instan
 
 ### Invidious Embed
 
-Replaces all YouTube embeds with Invidious ([yewtu.be](https://yewtu.be/)) embeds wherever you go.
+Replaces all YouTube embeds with Invidious ([inv.nadeko.net](https://inv.nadeko.net/)) embeds wherever you go.
 
-#### Installation: [Click here](https://codeberg.org/mthsk/userscripts/raw/branch/master/invidious-embed/invidious-embed.user.js), or get it on [GreasyFork](https://greasyfork.org/scripts/438131-invidious-yewtu-be-embed).
+#### Installation: [Click here](https://codeberg.org/mthsk/userscripts/raw/branch/master/invidious-embed/invidious-embed.user.js), or get it on [GreasyFork](https://greasyfork.org/en/scripts/438131-invidious-inv-nadeko-net-embed).
 
 ### Rimgo Embed
 
