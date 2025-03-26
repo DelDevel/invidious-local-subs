@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name        Invidious (yewtu.be) embed
-// @description Replace YouTube embeds with yewtu.be embeds.
+// @name        Invidious (inv.nadeko.net) embed
+// @description Replace YouTube embeds with inv.nadeko.net embeds.
 // @author      Backend & SkauOfArcadia
 // @homepage    https://codeberg.org/mthsk/userscripts/src/branch/master/invidious-embed
 // @updateURL   https://codeberg.org/mthsk/userscripts/raw/branch/master/invidious-embed/invidious-embed.user.js
@@ -13,19 +13,19 @@
 // @exclude     *://*/embed/*
 // @exclude     *://*/watch?v=*
 // @inject-into content
-// @version     2023.06
+// @version     2025.03
 // @grant       none
 // @allFrames   true
 // ==/UserScript==
 (function() {
     "use strict";
-    const instance = "yewtu.be";
+    const instance = "inv.nadeko.net";
     const a = -1; //defines autoplay value on the initial page load
     const b = -1; //defines autoplay for embedded videos that appear on page interaction
     // -1 = will only autoplay if the embed has the "autoplay=1" parameter
     // 0 = disables autoplay
     // 1 = enables autoplay
-    const dash = true; //defines if the quality=dash parameter will be used
+    const dash = false; //defines if the quality=dash parameter will be used
 
     var observer = new MutationObserver(mutate);
     observer.observe(document, {
