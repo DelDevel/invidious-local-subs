@@ -35,6 +35,7 @@
 // @match       *://invidious.weblibre.org/*
 // @match       *://youchu.be/*
 // @match       *://yewtu.be/*
+// @grant       GM.addElement
 // @grant       GM.getValue
 // @grant       GM.setValue
 // @grant       GM.notification
@@ -46,7 +47,7 @@
 // @connect     *
 // @require     https://greasemonkey.github.io/gm4-polyfill/gm4-polyfill.js
 // @run-at      document-start
-// @version     2024.06
+// @version     2026.03
 // @license     AGPL-3.0-or-later
 // @description Skips annoying intros, sponsors and w/e on YouTube and its frontends like Invidious and CloudTube using the SponsorBlock API.
 // ==/UserScript==
@@ -109,6 +110,7 @@
         })();
         try {
             const response = s3settings.disable_hashing ? JSON.parse("[{\"videoID\":\"" + videoId + "\",\"segments\":" + resp.responseText + "}]") : JSON.parse(resp.responseText);
+            rPoi = null;
 
             for (let x = 0; x < response.length; x++)
             {
@@ -371,10 +373,139 @@
             loadevent = "load";
 
         window.addEventListener(loadevent, function() {
-            const docHtml = document.getElementsByTagName('html')[0];
-            docHtml.innerHTML = '\<center><h1>Simple Sponsor Skipper</h1><br><form><div><input type="checkbox" id="sponsor"><label for="sponsor">Skip sponsor segments</label><br><input type="checkbox" id="intro"><label for="intro">Skip intro segments</label><br><input type="checkbox" id="outro"><label for="outro">Skip outro segments</label><br><input type="checkbox" id="interaction"><label for="interaction">Skip interaction reminder segments</label><br><input type="checkbox" id="selfpromo"><label for="selfpromo">Skip self-promotion segments</label><br><input type="checkbox" id="preview"><label for="preview">Skip preview segments</label><br><input type="checkbox" id="music_offtopic"><label for="music_offtopic">Skip non-music segments in music videos</label><br><input type="checkbox" id="filler"><label for="filler">Skip filler segments (WARNING: very aggressive!)</label><br><label for="upvotes">Minimum segment upvotes:</label><input type="number" id="upvotes"><br><input type="checkbox" id="notifications"><label for="notifications">Enable Desktop Notifications</label><br><input type="checkbox" id="disable_hashing"><label for="disable_hashing">Disable Video ID Hashing (Pale Moon Compatibility Fix)</label><br><label for="instance">Database Instance:</label><input id="instance" type="text" list="instances" /><datalist id="instances"><option value="sponsor.ajay.app">sponsor.ajay.app (Official)</option><option value="sponsorblock.kavin.rocks">sponsorblock.kavin.rocks</option><option value="sponsorblock.gleesh.net">sponsorblock.gleesh.net</option><option value="sb.theairplan.com">sb.theairplan.com</option></datalist><br><label for="darkmode">Theme:</label><select id="darkmode"><option value="-1">auto</option><option value="0">light</option> <option value="1">dark</option></select></div><br><div><button type="button" id="btnsave" style="margin-right: 1em;">Save settings</button><button type="button" id="btnclose" style="margin-left: 1em;">Close</button></div></form></center>';
-            docHtml.style = "";
-            document.head.innerHTML = "\<style> body { background-color: white; color: black; } .dark-theme { background-color: black; color: white; } </style>";
+            const docHtml = document.createElement('html');
+
+            // Create and append the head with styles
+            const head = GM.addElement(docHtml, 'head');
+            const style = GM.addElement(head, 'style', {
+                textContent: `
+                    body { background-color: white; color: black; }
+                    .dark-theme { background-color: black; color: white; }
+                `
+            });
+
+            // Create and append the body
+            const body = GM.addElement(docHtml, 'body');
+
+            // Create the center element
+            const center = GM.addElement(body, 'center');
+
+            // Create the title
+            GM.addElement(center, 'h1', { textContent: 'Simple Sponsor Skipper' });
+
+            // Create the form
+            const form = GM.addElement(center, 'form');
+
+            // Create the settings checkboxes
+            const settings = [
+                { id: 'sponsor', label: 'Skip sponsor segments' },
+                { id: 'intro', label: 'Skip intro segments' },
+                { id: 'outro', label: 'Skip outro segments' },
+                { id: 'interaction', label: 'Skip interaction reminder segments' },
+                { id: 'selfpromo', label: 'Skip self-promotion segments' },
+                { id: 'preview', label: 'Skip preview segments' },
+                { id: 'music_offtopic', label: 'Skip non-music segments in music videos' },
+                { id: 'filler', label: 'Skip filler segments (WARNING: very aggressive!)' },
+            ];
+
+            // Add checkboxes to the form
+            settings.forEach(setting => {
+                const div = GM.addElement(form, 'div');
+                const checkbox = GM.addElement(div, 'input', {
+                    type: 'checkbox',
+                    id: setting.id,
+                });
+                GM.addElement(div, 'label', {
+                    for: setting.id,
+                    textContent: setting.label
+                });
+            });
+
+            // Minimum segment upvotes
+            const upvotesDiv = GM.addElement(form, 'div');
+            GM.addElement(upvotesDiv, 'label', {
+                textContent: 'Minimum segment upvotes:'
+            });
+            GM.addElement(upvotesDiv, 'input', {
+                type: 'number',
+                id: 'upvotes'
+            });
+
+            // Enable Desktop Notifications checkbox
+            const notificationsDiv = GM.addElement(form, 'div');
+            const notificationsCheckbox = GM.addElement(notificationsDiv, 'input', {
+                type: 'checkbox',
+                id: 'notifications'
+            });
+            GM.addElement(notificationsDiv, 'label', {
+                for: 'notifications',
+                textContent: 'Enable Desktop Notifications'
+            });
+
+            // Disable Video ID Hashing checkbox
+            const hashingDiv = GM.addElement(form, 'div');
+            const hashingCheckbox = GM.addElement(hashingDiv, 'input', {
+                type: 'checkbox',
+                id: 'disable_hashing'
+            });
+            GM.addElement(hashingDiv, 'label', {
+                for: 'disable_hashing',
+                textContent: 'Disable Video ID Hashing (Pale Moon Compatibility Fix)'
+            });
+
+            // Database Instance input
+            const instanceDiv = GM.addElement(form, 'div');
+            GM.addElement(instanceDiv, 'label', {
+                textContent: 'Database Instance:'
+            });
+            const instanceInput = GM.addElement(instanceDiv, 'input', {
+                id: 'instance',
+                type: 'text',
+                list: 'instances'
+            });
+            const dataList = GM.addElement(instanceDiv, 'datalist', { id: 'instances' });
+            const instances = [
+                'sponsor.ajay.app (Official)',
+                'sponsorblock.kavin.rocks',
+                'sponsorblock.gleesh.net',
+                'sb.theairplan.com'
+            ];
+            instances.forEach(instance => {
+                GM.addElement(dataList, 'option', { value: instance });
+            });
+
+            // Theme selection
+            const themeDiv = GM.addElement(form, 'div');
+            GM.addElement(themeDiv, 'label', { textContent: 'Theme:' });
+            const themeSelect = GM.addElement(themeDiv, 'select', { id: 'darkmode' });
+            const themes = [
+                { value: '-1', text: 'auto' },
+                { value: '0', text: 'light' },
+                { value: '1', text: 'dark' }
+            ];
+            themes.forEach(theme => {
+                GM.addElement(themeSelect, 'option', {
+                    value: theme.value,
+                    textContent: theme.text
+                });
+            });
+
+            // Button section
+            const buttonDiv = GM.addElement(form, 'div');
+            GM.addElement(buttonDiv, 'button', {
+                type: 'button',
+                id: 'btnsave',
+                textContent: 'Save settings',
+                style: 'margin-right: 1em;'
+            });
+            GM.addElement(buttonDiv, 'button', {
+                type: 'button',
+                id: 'btnclose',
+                textContent: 'Close',
+                style: 'margin-left: 1em;'
+            });
+            document.getElementsByTagName('html')[0].replaceWith(docHtml);
+
             document.title = 'Simple Sponsor Skipper Configuration';
             document.getElementById('sponsor').checked = s3settings.categories.includes("sponsor");
             document.getElementById('intro').checked = s3settings.categories.includes("intro");
