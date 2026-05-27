@@ -136,7 +136,7 @@
         const getPlayer = function() {
           return new Promise(resolve => {
             let plTimer = window.setInterval(() => {
-              const plr = document.body.querySelector(PLR_SELECTOR);
+              const plr = document.body && document.body.querySelector(PLR_SELECTOR);
               if (!!plr && plr.readyState >= 3) {
                 window.clearInterval(plTimer);
                 resolve(plr);
