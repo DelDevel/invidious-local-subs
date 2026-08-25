@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Invidious Local Subscriptions - DelDevel's Fork
-// @author      mthsk, DelDevel
+// @author      mthsk
 // @homepage    https://github.com/DelDevel/invidious-local-subs/
 // @match       *://yewtu.be/*
 // @match       *://inv.nadeko.net/*
