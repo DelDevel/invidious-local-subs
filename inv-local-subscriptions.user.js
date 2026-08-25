@@ -1,14 +1,14 @@
 // ==UserScript==
-// @name        Invidious Local Subscriptions
-// @author      mthsk
-// @homepage    https://codeberg.org/mthsk/userscripts/src/branch/master/inv-local-subscriptions
+// @name        Invidious Local Subscriptions - DelDevel's Fork
+// @author      mthsk, DelDevel
+// @homepage    https://github.com/DelDevel/invidious-local-subs/tree/main
 // @match       *://yewtu.be/*
 // @match       *://inv.nadeko.net/*
 // @match       *://yt.chocolatemoo53.com/*
 // @match       *://invidious.nerdvpn.de/*
 // @match       *://invidious.f5.si/*
 // @match       *://invidious.tiekoetter.com/*
-// @version     2024.06
+// @version     2026.08
 // @description Implements local subscriptions on Invidious.
 // @run-at      document-end
 // @grant       GM.getValue
