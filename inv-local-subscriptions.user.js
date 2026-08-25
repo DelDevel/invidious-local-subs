@@ -2,16 +2,12 @@
 // @name        Invidious Local Subscriptions
 // @author      mthsk
 // @homepage    https://codeberg.org/mthsk/userscripts/src/branch/master/inv-local-subscriptions
-// @match       *://invidio.xamh.de/*
-// @match       *://vid.puffyan.us/*
-// @match       *://watch.thekitty.zone/*
-// @match       *://y.com.sb/*
 // @match       *://yewtu.be/*
-// @match       *://youchu.be/*
-// @match       *://youtube.076.ne.jp/*
 // @match       *://inv.nadeko.net/*
-// @match       *://id.420129.xyz/*
 // @match       *://yt.chocolatemoo53.com/*
+// @match       *://invidious.nerdvpn.de/*
+// @match       *://invidious.f5.si/*
+// @match       *://invidious.tiekoetter.com/*
 // @version     2024.06
 // @description Implements local subscriptions on Invidious.
 // @run-at      document-end
