@@ -1,9 +1,11 @@
 # Invidious Local Subscriptions
 Implements local subscriptions on Invidious. Should work on any working Invidious instance.
+
 My personal fork of mhtsk's Invidious local subscriptions. You can find the original repository [here](https://codeberg.org/mthsk/userscripts).
+
 Since there are no more working invidious instances with working public APIs and the piped approach wasn't very good, I decided to rewrite this userscript to make use of youtube's RSS feed.
 
-## Installation: [Click here](https://codeberg.org/mthsk/userscripts/raw/branch/master/inv-local-subscriptions/inv-local-subscriptions.user.js).
+## Installation: [Click here](https://github.com/DelDevel/invidious-local-subs/raw/refs/heads/main/inv-local-subscriptions.user.js).
 Requires an userscript manager such as [ViolentMonkey](https://violentmonkey.github.io/).
 
 ## Support the original creator of this userscript
