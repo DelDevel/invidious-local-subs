@@ -171,13 +171,17 @@
     return videos;
   }
 
-  async function getRSSSubscriptionFeed() {
+  async function getRSSSubscriptionFeed(forced = false) {
     let feed = await GM.getValue("feed", {
       last: Date.now(),
       feed: [],
     });
 
-    if (feed.feed.length != 0 && Date.now() - feed.last < FEED_CACHE_DURATION) {
+    if (
+      !forced &&
+      feed.feed.length != 0 &&
+      Date.now() - feed.last < FEED_CACHE_DURATION
+    ) {
       return feed.feed;
     }
 
@@ -405,28 +409,47 @@
   }
 
   async function initFeedPage() {
-    replaceNavbar(
-      `<a href="/feed/popular" class="feed-menu-item pure-menu-heading">Popular</a>` +
-        `<a href="/feed/trending" class="feed-menu-item pure-menu-heading">Trending</a>` +
-        `<a id="invlocal-refresh" href="javascript:void(0);" class="feed-menu-item pure-menu-heading">Refresh Subscriptions</a>`,
-    );
-
     document.title = "Local Subscription Feed - Invidious";
 
-    let feed = await getRSSSubscriptionFeed();
+    const filtersEl = document.getElementById("filters");
+    if (filtersEl) {
+      const refreshBtn = document.createElement("button");
+      refreshBtn.id = "invlocal-refresh";
+      refreshBtn.textContent = "Refresh Subscriptions";
+      refreshBtn.style.cssText =
+        "background: #3672b9; color: #fff; border: none; " +
+        "padding: 8px 16px; margin-left: 8px; cursor: pointer; " +
+        "border-radius: 4px; font-size: 14px;";
+      refreshBtn.addEventListener("click", async function () {
+        if (refreshBtn.hasAttribute("disabled")) return;
+        startIndex = 0;
+        scrollLoading = false;
 
+        feed = await getRSSSubscriptionFeed(true);
+        await displaySubscriptionFeed(feed, startIndex);
+        location.reload();
+      });
+      filtersEl.appendChild(refreshBtn);
+    }
+
+    let feed = await getRSSSubscriptionFeed();
 
     let startIndex = 0;
     await displaySubscriptionFeed(feed, startIndex);
 
+    let scrollLoading = false;
     window.addEventListener("scroll", function () {
+      if (scrollLoading) return;
       if (
         window.innerHeight + window.pageYOffset >= document.body.offsetHeight &&
         !document.getElementById("invlocal-loading")
       ) {
         startIndex += BATCH_SIZE;
         if (startIndex < feed.length) {
-          displaySubscriptionFeed(feed, startIndex);
+          scrollLoading = true;
+          displaySubscriptionFeed(feed, startIndex).then(() => {
+            scrollLoading = false;
+          });
         }
       }
     });
