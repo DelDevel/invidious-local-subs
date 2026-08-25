@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name        Invidious Local Subscriptions - DelDevel's Fork
 // @author      mthsk, DelDevel
-// @homepage    https://github.com/DelDevel/invidious-local-subs/tree/main
+// @homepage    https://github.com/DelDevel/invidious-local-subs/
 // @match       *://yewtu.be/*
 // @match       *://inv.nadeko.net/*
 // @match       *://yt.chocolatemoo53.com/*
-// @match       *://invidious.nerdvpn.de/*
 // @match       *://invidious.f5.si/*
 // @match       *://invidious.tiekoetter.com/*
+// @match       *://invidious.nerdvpn.de/*
 // @version     2026.08
 // @description Implements local subscriptions on Invidious.
 // @run-at      document-end
