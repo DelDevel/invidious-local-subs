@@ -8,6 +8,7 @@
 // @match       *://invidious.f5.si/*
 // @match       *://invidious.tiekoetter.com/*
 // @match       *://invidious.nerdvpn.de/*
+// @match       *://invidious-*.privadency.com/*
 // @version     2026.08
 // @description Implements local subscriptions on Invidious.
 // @run-at      document-end
